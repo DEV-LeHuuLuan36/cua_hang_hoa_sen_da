@@ -1,0 +1,72 @@
+import '../../models/product/succulent.dart';
+import '../../models/product/category.dart';
+import '../daos/product_dao.dart';
+import '../daos/category_dao.dart';
+
+class ProductRepository {
+  final ProductDao _productDao;
+  final CategoryDao _categoryDao;
+
+  ProductRepository({
+    required ProductDao productDao,
+    required CategoryDao categoryDao,
+  })  : _productDao = productDao,
+        _categoryDao = categoryDao;
+
+  // --- NGHIỆP VỤ DANH MỤC ---
+  Future<List<Category>> getCategories() async {
+    try {
+      return await _categoryDao.getAllCategories();
+    } catch (e) {
+      print("Lỗi lấy danh mục: $e");
+      return [];
+    }
+  }
+
+  Future<bool> addCategory(Category category) async {
+    try {
+      final result = await _categoryDao.insertCategory(category);
+      return result > 0;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // --- NGHIỆP VỤ SẢN PHẨM ---
+  Future<List<Succulent>> getAllProducts() async {
+    try {
+      return await _productDao.getAllProducts();
+    } catch (e) {
+      print("Lỗi lấy danh sách sản phẩm: $e");
+      return [];
+    }
+  }
+
+  Future<Succulent?> getProductById(String id) async {
+    try {
+      return await _productDao.getProductById(id);
+    } catch (e) {
+      print("Lỗi lấy chi tiết sản phẩm: $e");
+      return null;
+    }
+  }
+
+  Future<List<Succulent>> getProductsByCategory(String categoryId) async {
+    try {
+      return await _productDao.getProductsByCategory(categoryId);
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // Dùng cho Admin thêm sản phẩm
+  Future<bool> addProduct(Succulent product) async {
+    try {
+      final result = await _productDao.insertProduct(product);
+      return result > 0;
+    } catch (e) {
+      print("Lỗi thêm sản phẩm: $e");
+      return false;
+    }
+  }
+}

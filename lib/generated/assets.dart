@@ -4,34 +4,6 @@ import 'package:flutter/widgets.dart';
 
 class Assets {
   Assets._();
-
-  static const String main = 'lib/main.dart';
-  static const $AssetsGeneratedGen generated = $AssetsGeneratedGen();
-  static const $AssetsModelsGen models = $AssetsModelsGen();
-}
-
-class $AssetsModelsGen {
-  const $AssetsModelsGen();
-
-  final $AssetsEnumsGen enums = const $AssetsEnumsGen();
-}
-
-class $AssetsEnumsGen {
-  const $AssetsEnumsGen();
-
-  final String addressType = 'lib/models/enums/address_type.dart';
-  final String membershipLevel = 'lib/models/enums/membership_level.dart';
-  final String orderStatus = 'lib/models/enums/order_status.dart';
-  final String paymentMethod = 'lib/models/enums/payment_method.dart';
-  final String paymentStatus = 'lib/models/enums/payment_status.dart';
-  final String productStatus = 'lib/models/enums/product_status.dart';
-  final String userRole = 'lib/models/enums/user_role.dart';
-}
-
-class $AssetsGeneratedGen {
-  const $AssetsGeneratedGen();
-
-  final String assets = 'lib/generated/assets.dart';
 }
 
 class AssetGenImage {
@@ -105,46 +77,6 @@ class AssetGenImage {
       package: package,
     );
   }
-
-  Widget custom({
-    Key? key,
-    required Widget Function(BuildContext context, String assetPath) builder,
-  }) {
-    return Builder(
-      key: key,
-      builder: (context) => builder(context, _assetName),
-    );
-  }
-
-  String get path => _assetName;
-
-  String get keyName => _assetName;
-}
-
-class SvgGenImage {
-  const SvgGenImage(this._assetName);
-
-  final String _assetName;
-
-  Widget custom({
-    Key? key,
-    required Widget Function(BuildContext context, String assetPath) builder,
-  }) {
-    return Builder(
-      key: key,
-      builder: (context) => builder(context, _assetName),
-    );
-  }
-
-  String get path => _assetName;
-
-  String get keyName => _assetName;
-}
-
-class LottieGenImage {
-  const LottieGenImage(this._assetName);
-
-  final String _assetName;
 
   Widget custom({
     Key? key,

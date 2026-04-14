@@ -125,6 +125,29 @@ class DatabaseHelper {
         ${AddressContract.colUpdatedAt} INTEGER NOT NULL
       )
     ''');
+    // Tạo bảng cart
+    await db.execute('''
+        CREATE TABLE cart (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL UNIQUE,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL,
+          FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+      ''');
+    // Tạo bảng cart_items
+    await db.execute('''
+        CREATE TABLE cart_items (
+          id TEXT PRIMARY KEY,
+          cart_id TEXT NOT NULL,
+          product_id TEXT NOT NULL,
+          quantity INTEGER NOT NULL,
+          variant TEXT,
+          added_at INTEGER NOT NULL,
+          FOREIGN KEY (cart_id) REFERENCES cart (id),
+          FOREIGN KEY (product_id) REFERENCES products (id)
+        )
+      ''');
 
     // Tạm thời tạo 5 bảng lõi này trước, các bảng Đơn Hàng (Orders) & Giỏ hàng (Cart) ta có thể add thêm sau nếu cần.
   }
