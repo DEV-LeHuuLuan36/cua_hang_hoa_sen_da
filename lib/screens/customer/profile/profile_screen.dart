@@ -168,9 +168,11 @@ class ProfileScreen extends StatelessWidget {
                 const Divider(height: 1, indent: 56),
                 _buildMenuItem(context, Icons.favorite_border, 'Sản phẩm yêu thích', '/wishlist'), // Nối màn Yêu thích
                 const Divider(height: 1, indent: 56),
-                _buildMenuItem(context, Icons.star_border, 'Đánh giá của tôi', ''),
-                const Divider(height: 1, indent: 56),
                 _buildMenuItem(context, Icons.confirmation_number_outlined, 'Voucher của tôi', '/my-vouchers'), // Nối màn Voucher
+                _buildMenuItem(context, Icons.history, 'Đã xem gần đây', '/recently-viewed'),
+                const Divider(height: 1, indent: 56),
+                _buildMenuItem(context, Icons.star_border, 'Đánh giá của tôi', ''),
+
               ],
             ),
           );

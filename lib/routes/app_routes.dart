@@ -18,9 +18,10 @@ import '../screens/customer/order/order_detail_screen.dart';
 import '../screens/customer/profile/my_vouchers_screen.dart';
 import '../screens/customer/product/product_list_screen.dart';
 import '../screens/admin/admin_report_screen.dart';
-
+import '../screens/customer/profile/recently_viewed_screen.dart';
 import '../screens/admin/admin_dashboard_screen.dart';
 import '../screens/admin/admin_product_screen.dart';
+import '../screens/customer/search/search_screen.dart';
 
 class AppRoutes {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -70,6 +71,11 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const ProductListScreen());
       case '/admin-report':
         return MaterialPageRoute(builder: (_) => const AdminReportScreen());
+      case '/recently-viewed':
+        return MaterialPageRoute(builder: (_) => const RecentlyViewedScreen());
+      case '/RouteNames.search':
+        return MaterialPageRoute(builder: (_) => const SearchScreen());
+
       default:
         return MaterialPageRoute(
           builder: (_) => Scaffold(

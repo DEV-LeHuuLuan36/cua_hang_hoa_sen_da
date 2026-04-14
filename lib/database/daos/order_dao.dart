@@ -40,4 +40,46 @@ class OrderDao {
       orderBy: 'created_at DESC',
     );
   }
+  // 3. Lấy TẤT CẢ đơn hàng (Dành cho Admin)
+  Future<List<Map<String, dynamic>>> getAllOrders() async {
+    final database = await db;
+    return await database.query(
+      'orders',
+      orderBy: 'created_at DESC', // Đơn mới nhất xếp trên
+    );
+  }
+
+  // 4. Cập nhật trạng thái đơn hàng (Dành cho Admin)
+  Future<int> updateOrderStatus(String orderId, String newStatus) async {
+    final database = await db;
+    return await database.update(
+      'orders',
+      {
+        'order_status': newStatus,
+        'updated_at': DateTime.now().millisecondsSinceEpoch
+      },
+      where: 'id = ?',
+      whereArgs: [orderId],
+    );
+  }
+  // 5. Lấy thông tin chung của 1 đơn hàng theo ID
+  Future<Map<String, dynamic>?> getOrderById(String orderId) async {
+    final database = await db;
+    final result = await database.query(
+      'orders',
+      where: 'id = ?',
+      whereArgs: [orderId],
+    );
+    return result.isNotEmpty ? result.first : null;
+  }
+
+  // 6. Lấy danh sách sản phẩm (items) bên trong đơn hàng đó
+  Future<List<Map<String, dynamic>>> getOrderItems(String orderId) async {
+    final database = await db;
+    return await database.query(
+      'order_items',
+      where: 'order_id = ?',
+      whereArgs: [orderId],
+    );
+  }
 }

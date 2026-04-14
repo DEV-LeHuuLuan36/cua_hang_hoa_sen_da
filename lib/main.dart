@@ -22,7 +22,7 @@ import 'providers/auth_provider.dart';
 import 'providers/product_provider.dart';
 import 'providers/cart_provider.dart';
 import 'providers/order_provider.dart';
-
+import 'providers/search_provider.dart';
 void main() {
   // Đảm bảo các widget binding của Flutter được khởi tạo trước khi gọi SQLite
   WidgetsFlutterBinding.ensureInitialized();

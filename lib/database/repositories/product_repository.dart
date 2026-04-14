@@ -69,4 +69,18 @@ class ProductRepository {
       return false;
     }
   }
+  Future<List<Succulent>> searchProducts({
+    String keyword = '',
+    double? minPrice,
+    double? maxPrice,
+    String? careLevel,
+  }) async {
+    final List<Map<String, dynamic>> maps = await _productDao.searchAndFilterProducts(
+      keyword: keyword,
+      minPrice: minPrice,
+      maxPrice: maxPrice,
+      careLevel: careLevel,
+    );
+    return maps.map((map) => Succulent.fromMap(map)).toList();
+  }
 }

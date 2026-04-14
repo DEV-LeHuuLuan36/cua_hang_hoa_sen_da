@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../utils/constants/route_names.dart';
 import '../../../widgets/common/product_card.dart';
 import '../../../providers/product_provider.dart';
 
@@ -7,6 +8,8 @@ import '../../../providers/auth_provider.dart';
 import '../../../theme/app_colors.dart';
 import '../cart/cart_screen.dart';
 import '../profile/profile_screen.dart';
+
+import '../../../providers/recently_viewed_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -174,8 +177,27 @@ class _HomeContentState extends State<HomeContent> {
                   mainAxisSpacing: 16,
                 ),
                 itemCount: products.length,
+                // Tìm đến đoạn GridView.builder trong HomeContent của bạn
                 itemBuilder: (context, index) {
-                  return ProductCard(product: products[index]);
+                  final product = products[index]; // Lấy sản phẩm hiện tại
+
+                  return GestureDetector(
+                    onTap: () {
+                      // 1. Lấy userId hiện tại
+                      final userId = context.read<AuthProvider>().currentUser?.id;
+
+                      // 2. Nếu đã đăng nhập thì lưu vào lịch sử "Đã xem gần đây"
+                      if (userId != null) {
+                        // ĐÃ SỬA LỖI: Dùng product.id thay vì product['id']
+                        context.read<RecentlyViewedProvider>().addViewedProduct(userId, product.id);
+                      }
+
+                      // 3. Chuyển sang màn hình Chi tiết sản phẩm theo nguyên tắc truyền ID (ID-Only Rule)
+                      // ĐÃ SỬA LỖI: Dùng product.id thay vì product['id']
+                      Navigator.pushNamed(context, RouteNames.productDetail, arguments: product.id);
+                    },
+                    child: ProductCard(product: product),
+                  );
                 },
               ),
           ],

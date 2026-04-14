@@ -68,4 +68,37 @@ class ProductDao {
       whereArgs: [product.id],
     );
   }
+  Future<List<Map<String, dynamic>>> searchAndFilterProducts({
+    String keyword = '',
+    double? minPrice,
+    double? maxPrice,
+    String? careLevel,
+  }) async {
+    final db = await _dbHelper.database;
+    final database = await db;
+
+    // Câu lệnh SQL cơ bản
+    String query = 'SELECT * FROM products WHERE name LIKE ?';
+    List<dynamic> args = ['%$keyword%'];
+
+    // Lọc theo giá tối thiểu
+    if (minPrice != null) {
+      query += ' AND price >= ?';
+      args.add(minPrice);
+    }
+
+    // Lọc theo giá tối đa
+    if (maxPrice != null) {
+      query += ' AND price <= ?';
+      args.add(maxPrice);
+    }
+
+    // Lọc theo độ khó chăm sóc
+    if (careLevel != null && careLevel.isNotEmpty) {
+      query += ' AND care_level = ?';
+      args.add(careLevel);
+    }
+
+    return await database.rawQuery(query, args);
+  }
 }

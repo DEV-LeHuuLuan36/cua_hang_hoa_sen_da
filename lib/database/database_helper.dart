@@ -148,7 +148,68 @@ class DatabaseHelper {
           FOREIGN KEY (product_id) REFERENCES products (id)
         )
       ''');
+    // Tạo bảng orders
+    await db.execute('''
+        CREATE TABLE orders (
+          id TEXT PRIMARY KEY,
+          order_number TEXT NOT NULL UNIQUE,
+          user_id TEXT NOT NULL,
+          address_id TEXT NOT NULL,
+          voucher_id TEXT,
+          subtotal REAL NOT NULL,
+          shipping_fee REAL NOT NULL DEFAULT 0,
+          discount REAL NOT NULL DEFAULT 0,
+          total REAL NOT NULL,
+          payment_method TEXT NOT NULL,
+          payment_status TEXT DEFAULT 'UNPAID',
+          order_status TEXT DEFAULT 'PENDING',
+          note TEXT,
+          payment_date INTEGER,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL,
+          FOREIGN KEY (user_id) REFERENCES users (id),
+          FOREIGN KEY (address_id) REFERENCES addresses (id)
+        )
+      ''');
 
+    // Tạo bảng order_items
+    await db.execute('''
+        CREATE TABLE order_items (
+          id TEXT PRIMARY KEY,
+          order_id TEXT NOT NULL,
+          product_id TEXT NOT NULL,
+          product_name TEXT NOT NULL,
+          variant TEXT,
+          quantity INTEGER NOT NULL,
+          price REAL NOT NULL,
+          total REAL NOT NULL,
+          FOREIGN KEY (order_id) REFERENCES orders (id),
+          FOREIGN KEY (product_id) REFERENCES products (id)
+        )
+      ''');
+    // Tạo bảng favorites (Sản phẩm yêu thích)
+    await db.execute('''
+        CREATE TABLE favorites (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL,
+          product_id TEXT NOT NULL,
+          created_at INTEGER NOT NULL,
+          FOREIGN KEY (user_id) REFERENCES users (id),
+          FOREIGN KEY (product_id) REFERENCES products (id)
+        )
+      ''');
+
+    // Tạo bảng recently_viewed (Đã xem gần đây)
+    await db.execute('''
+        CREATE TABLE recently_viewed (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL,
+          product_id TEXT NOT NULL,
+          viewed_at INTEGER NOT NULL,
+          FOREIGN KEY (user_id) REFERENCES users (id),
+          FOREIGN KEY (product_id) REFERENCES products (id)
+        )
+      ''');
     // Tạm thời tạo 5 bảng lõi này trước, các bảng Đơn Hàng (Orders) & Giỏ hàng (Cart) ta có thể add thêm sau nếu cần.
   }
 }

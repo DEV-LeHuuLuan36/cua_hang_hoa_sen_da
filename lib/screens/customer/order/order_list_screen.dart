@@ -1,13 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../theme/app_colors.dart';
+import '../../../providers/order_provider.dart';
+import '../../../providers/auth_provider.dart';
+import '../../../utils/constants/route_names.dart';
 
-class OrderListScreen extends StatelessWidget {
+class OrderListScreen extends StatefulWidget {
   const OrderListScreen({Key? key}) : super(key: key);
+
+  @override
+  State<OrderListScreen> createState() => _OrderListScreenState();
+}
+
+class _OrderListScreenState extends State<OrderListScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Tải danh sách đơn hàng của User đang đăng nhập
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final userId = context.read<AuthProvider>().currentUser?.id;
+      if (userId != null) {
+        context.read<OrderProvider>().loadMyOrders(userId);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 4, // 4 trạng thái: Chờ xác nhận, Đang giao, Hoàn thành, Đã hủy
+      length: 4,
       child: Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
@@ -28,24 +49,40 @@ class OrderListScreen extends StatelessWidget {
             ],
           ),
         ),
-        body: TabBarView(
-          children: [
-            _buildOrderList('Chờ xác nhận', AppColors.warning),
-            _buildOrderList('Đang giao', Colors.blue),
-            _buildOrderList('Hoàn thành', AppColors.success),
-            _buildOrderList('Đã hủy', AppColors.error),
-          ],
+        body: Consumer<OrderProvider>(
+          builder: (context, orderProvider, child) {
+            if (orderProvider.isLoading) {
+              return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+            }
+
+            final myOrders = orderProvider.myOrders;
+
+            return TabBarView(
+              children: [
+                _buildOrderList(myOrders, 'PENDING', AppColors.warning),
+                _buildOrderList(myOrders, 'SHIPPING', Colors.blue),
+                _buildOrderList(myOrders, 'DELIVERED', AppColors.success),
+                _buildOrderList(myOrders, 'CANCELLED', AppColors.error),
+              ],
+            );
+          },
         ),
       ),
     );
   }
 
-  // Widget vẽ danh sách đơn hàng (Mock data)
-  Widget _buildOrderList(String status, Color statusColor) {
+  Widget _buildOrderList(List<Map<String, dynamic>> orders, String statusKey, Color statusColor) {
+    final filteredOrders = orders.where((o) => o['order_status'] == statusKey).toList();
+
+    if (filteredOrders.isEmpty) {
+      return const Center(child: Text('Không có đơn hàng nào ở trạng thái này.'));
+    }
+
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: 2, // Hiển thị giả 2 đơn hàng mỗi tab
+      itemCount: filteredOrders.length,
       itemBuilder: (context, index) {
+        final order = filteredOrders[index];
         return Container(
           margin: const EdgeInsets.only(bottom: 16),
           padding: const EdgeInsets.all(16),
@@ -57,46 +94,33 @@ class OrderListScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header: Mã đơn & Trạng thái
+              // Header
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Mã ĐH: #SD12345', style: TextStyle(fontWeight: FontWeight.bold)),
-                  Text(status, style: TextStyle(color: statusColor, fontWeight: FontWeight.bold)),
+                  Text('Mã ĐH: #${order['order_number']}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text(
+                    statusKey == 'PENDING' ? 'Chờ xác nhận' :
+                    statusKey == 'SHIPPING' ? 'Đang giao' :
+                    statusKey == 'DELIVERED' ? 'Hoàn thành' : 'Đã hủy',
+                    style: TextStyle(color: statusColor, fontWeight: FontWeight.bold),
+                  ),
                 ],
               ),
               const Divider(height: 24),
 
-              // Sản phẩm
-              Row(
-                children: [
-                  Container(
-                    width: 60, height: 60,
-                    decoration: BoxDecoration(color: AppColors.primaryLight.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
-                    child: const Icon(Icons.eco, color: AppColors.primary),
-                  ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Sen đá kim cương', style: TextStyle(fontWeight: FontWeight.bold)),
-                        SizedBox(height: 4),
-                        Text('x2', style: TextStyle(color: AppColors.textSecondary)),
-                      ],
-                    ),
-                  ),
-                  const Text('100,000đ', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
-                ],
-              ),
+              // Thông tin (Có thể nối với order_items để hiển thị chi tiết sản phẩm)
+              Text('Ngày đặt: ${DateTime.fromMillisecondsSinceEpoch(order['created_at']).toString().substring(0, 16)}', style: const TextStyle(color: AppColors.textSecondary)),
+              const SizedBox(height: 8),
+              Text('Phương thức: ${order['payment_method']}', style: const TextStyle(color: AppColors.textSecondary)),
               const Divider(height: 24),
 
-              // Footer: Tổng tiền & Nút
+              // Footer & Button
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text('Thành tiền:', style: TextStyle(color: AppColors.textSecondary)),
-                  const Text('130,000đ', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryDark)),
+                  Text('${order['total']}đ', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryDark)),
                 ],
               ),
               const SizedBox(height: 12),
@@ -109,7 +133,8 @@ class OrderListScreen extends StatelessWidget {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                   onPressed: () {
-                    // Xem chi tiết đơn hàng
+                    // Áp dụng ID-Only Rule: Chuyển sang màn chi tiết bằng ID [2]
+                    Navigator.pushNamed(context, '/order-detail', arguments: order['id']);
                   },
                   child: const Text('XEM CHI TIẾT'),
                 ),
