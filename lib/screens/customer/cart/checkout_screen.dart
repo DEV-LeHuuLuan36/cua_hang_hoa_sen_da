@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart'; // Thêm dòng này
+
 import '../../../theme/app_colors.dart';
 import '../../../utils/constants/route_names.dart';
+// Thêm 3 provider này
+import '../../../providers/auth_provider.dart';
+import '../../../providers/cart_provider.dart';
+import '../../../providers/order_provider.dart';
 
 class CheckoutScreen extends StatelessWidget {
   const CheckoutScreen({Key? key}) : super(key: key);
@@ -20,7 +26,7 @@ class CheckoutScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Địa chỉ giao hàng (Mock)
+            // 1. Địa chỉ giao hàng
             const Text('Địa chỉ nhận hàng', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Container(
@@ -46,7 +52,7 @@ class CheckoutScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
-            // 2. Danh sách sản phẩm (Mock)
+            // 2. Sản phẩm
             const Text('Sản phẩm', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Container(
@@ -76,7 +82,7 @@ class CheckoutScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
-            // 3. Phương thức thanh toán (Mock)
+            // 3. Thanh toán
             const Text('Phương thức thanh toán', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Container(
@@ -89,18 +95,12 @@ class CheckoutScreen extends StatelessWidget {
                     title: const Text('Thanh toán khi nhận hàng (COD)'),
                     onChanged: (val) {},
                   ),
-                  const Divider(height: 1),
-                  RadioListTile(
-                    value: 'BANKING', groupValue: 'COD',
-                    title: const Text('Chuyển khoản ngân hàng'),
-                    onChanged: (val) {},
-                  ),
                 ],
               ),
             ),
             const SizedBox(height: 24),
 
-            // 4. Tổng kết chi phí
+            // 4. Tổng kết
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
@@ -132,9 +132,29 @@ class CheckoutScreen extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            onPressed: () {
-              // Bấm đặt hàng xong sẽ đá về màn hình Home hoặc màn hình Đơn hàng
-              showDialog(
+            onPressed: () async {
+              final authProvider = context.read<AuthProvider>();
+              final cartProvider = context.read<CartProvider>();
+              final orderProvider = context.read<OrderProvider>();
+
+              final userId = authProvider.currentUser?.id;
+              final cart = cartProvider.cart;
+              final items = cartProvider.cartItems;
+
+              if (userId == null || cart == null || items.isEmpty) return;
+
+              final success = await orderProvider.placeOrder(
+                userId: userId,
+                cartId: cart.id,
+                cartItems: items.map((e) => {'product_id': e.productId, 'quantity': e.quantity}).toList(),
+                totalAmount: 100000.0,
+              );
+
+              if (success && context.mounted) {
+                await cartProvider.loadCart(userId);
+                await orderProvider.loadMyOrders(userId);
+
+                showDialog(
                   context: context,
                   builder: (ctx) => AlertDialog(
                     title: const Icon(Icons.check_circle, color: AppColors.success, size: 60),
@@ -148,9 +168,11 @@ class CheckoutScreen extends StatelessWidget {
                         child: const Text('XEM ĐƠN HÀNG', style: TextStyle(color: AppColors.primary)),
                       )
                     ],
-                  )
-              );
+                  ),
+                );
+              }
             },
+
             child: const Text('ĐẶT HÀNG NGAY', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
           ),
         ),

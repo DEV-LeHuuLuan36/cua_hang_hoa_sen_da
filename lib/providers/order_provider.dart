@@ -1,46 +1,69 @@
 import 'package:flutter/material.dart';
-import '../models/order/order.dart';
-import '../models/order/order_item.dart';
 import '../database/repositories/order_repository.dart';
 
-class OrderProvider extends ChangeNotifier {
-  final OrderRepository _orderRepository;
+class OrderProvider with ChangeNotifier {
+  final OrderRepository orderRepository;
 
-  List<OrderModel> _orders = [];
+  OrderProvider({required this.orderRepository});
+
   bool _isLoading = false;
-
-  // Bắt buộc nhận Repository qua Constructor để đảm bảo Decoupling
-  OrderProvider({required OrderRepository orderRepository})
-      : _orderRepository = orderRepository;
-
-  List<OrderModel> get orders => _orders;
   bool get isLoading => _isLoading;
 
-  // 1. Lấy danh sách lịch sử đơn hàng của User
-  Future<void> loadUserOrders(String userId) async {
+  List<Map<String, dynamic>> _myOrders = [];
+  List<Map<String, dynamic>> get myOrders => _myOrders;
+
+  // Hàm Đặt hàng
+  Future<bool> placeOrder({
+    required String userId,
+    required String cartId,
+    required List<Map<String, dynamic>> cartItems,
+    required double totalAmount,
+  }) async {
     _isLoading = true;
     notifyListeners();
 
-    _orders = await _orderRepository.getOrdersByUser(userId);
+    final String orderId = 'ord_${DateTime.now().millisecondsSinceEpoch}';
+    final orderMap = {
+      'id': orderId,
+      'order_number': 'SD${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}',
+      'user_id': userId,
+      'address_id': 'mock_address_123',
+      'subtotal': totalAmount,
+      'shipping_fee': 30000.0,
+      'discount': 0.0,
+      'total': totalAmount + 30000.0,
+      'payment_method': 'COD',
+      'order_status': 'PENDING',
+      'created_at': DateTime.now().millisecondsSinceEpoch,
+      'updated_at': DateTime.now().millisecondsSinceEpoch,
+    };
 
-    _isLoading = false;
-    notifyListeners();
-  }
+    List<Map<String, dynamic>> orderItemsMap = cartItems.map((item) {
+      return {
+        'id': 'oi_${DateTime.now().millisecondsSinceEpoch}_${item['product_id']}',
+        'order_id': orderId,
+        'product_id': item['product_id'],
+        'product_name': 'Sản phẩm từ Giỏ',
+        'quantity': item['quantity'],
+        'price': 0.0,
+        'total': 0.0,
+      };
+    }).toList();
 
-  // 2. Tạo đơn hàng mới (Khi nhấn Thanh toán)
-  Future<bool> createOrder(OrderModel order, List<OrderItem> items) async {
-    _isLoading = true;
-    notifyListeners();
-
-    final success = await _orderRepository.createOrder(order, items);
-
-    if (success) {
-      // Tải lại danh sách đơn hàng để cập nhật trạng thái mới nhất
-      _orders = await _orderRepository.getOrdersByUser(order.userId);
-    }
+    // SỬA LỖI Ở ĐÂY: Gọi thông qua Repository thay vì chọc thẳng vào DAO
+    final success = await orderRepository.createOrder(orderMap, orderItemsMap, cartId);
 
     _isLoading = false;
     notifyListeners();
     return success;
+  }
+
+  Future<void> loadMyOrders(String userId) async {
+    _isLoading = true;
+    notifyListeners();
+    // SỬA LỖI Ở ĐÂY
+    _myOrders = await orderRepository.getOrdersByUser(userId);
+    _isLoading = false;
+    notifyListeners();
   }
 }
