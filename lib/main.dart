@@ -1,4 +1,5 @@
 import 'package:cua_hang_hoa_sen_da/routes/app_routes.dart';
+import 'package:cua_hang_hoa_sen_da/utils/constants/route_names.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -23,14 +24,12 @@ import 'providers/product_provider.dart';
 import 'providers/cart_provider.dart';
 import 'providers/order_provider.dart';
 import 'providers/search_provider.dart';
-void main() {
+Future<void> main() async {
   // Đảm bảo các widget binding của Flutter được khởi tạo trước khi gọi SQLite
   WidgetsFlutterBinding.ensureInitialized();
 
   if (Platform.isWindows || Platform.isLinux) {
-    // Khởi tạo FFI
     sqfliteFfiInit();
-    // Đổi databaseFactory sang FFI
     databaseFactory = databaseFactoryFfi;
   }
 
@@ -46,7 +45,8 @@ void main() {
   final productRepo = ProductRepository(productDao: productDao, categoryDao: categoryDao);
   final cartRepo = CartRepository(cartDao: cartDao);
   final orderRepo = OrderRepository(orderDao: orderDao);
-
+  final authProvider = AuthProvider(authRepository: authRepo);
+  await authProvider.tryAutoLogin();
   // BƯỚC 3: CHẠY APP VỚI MULTIPROVIDER
   runApp(
     MultiProvider(
@@ -55,6 +55,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => ProductProvider(productRepository: productRepo)),
         ChangeNotifierProvider(create: (_) => CartProvider(cartRepository: cartRepo)),
         ChangeNotifierProvider(create: (_) => OrderProvider(orderRepository: orderRepo)),
+        ChangeNotifierProvider.value(value: authProvider),
       ],
       child: const MyApp(),
     ),
@@ -66,27 +67,20 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Đọc trạng thái Auth để quyết định trang khởi đầu
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+
     return MaterialApp(
       title: 'Cửa Hàng Hoa Sen Đá',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        // Gọi font chữ đã cấu hình trong pubspec.yaml
         fontFamily: 'Plus Jakarta Sans',
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         useMaterial3: true,
       ),
-      initialRoute: '/login',
+      // Nếu đã login thì vào Home, ngược lại vào Login
+      initialRoute: auth.isAuthenticated ? RouteNames.home : RouteNames.login,
       onGenerateRoute: AppRoutes.generateRoute,
-      // Tạm thời hiển thị một màn hình trống báo thành công
-      home: const Scaffold(
-        body: Center(
-          child: Text(
-            '🎉 Thiết lập Nền Tảng Dữ Liệu Thành Công! 🎉\nSẵn sàng code Giao diện (UI)',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-        ),
-      ),
     );
   }
 }

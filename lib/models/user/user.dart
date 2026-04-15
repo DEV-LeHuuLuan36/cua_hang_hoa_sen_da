@@ -5,7 +5,7 @@ import '../enums/membership_level.dart';
 abstract class User {
   final String id;
   final String username;
-  final String password;
+  String password;
   final String fullName;
   final String email;
   final String phone;

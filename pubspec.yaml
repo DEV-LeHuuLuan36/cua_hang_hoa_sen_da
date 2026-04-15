@@ -1,5 +1,6 @@
 name: cua_hang_hoa_sen_da
 description: "A new Flutter project cho cửa hàng hoa sen đá."
+publish_to: 'none'
 version: 1.0.0+1
 
 environment:
@@ -11,10 +12,12 @@ dependencies:
   cupertino_icons: ^1.0.8
   http: ^1.3.0
   sqflite: ^2.4.1
-  path: 1.9.0
+  path: ^1.9.0
   provider: ^6.1.1
   sqflite_common_ffi: ^2.3.3
   google_maps_flutter: ^2.12.3
+  crypto: ^3.0.3
+  shared_preferences: ^2.2.2
 
 dev_dependencies:
   flutter_test:

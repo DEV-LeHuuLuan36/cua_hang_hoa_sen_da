@@ -1,70 +1,76 @@
+// lib/providers/auth_provider.dart
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user/user.dart';
 import '../models/user/customer.dart';
 import '../database/repositories/auth_repository.dart';
 
 class AuthProvider extends ChangeNotifier {
   final AuthRepository _authRepository;
-
-  // Trạng thái (State)
   User? _currentUser;
   bool _isLoading = false;
   String? _errorMessage;
 
-  // Bắt buộc nhận Repository từ Constructor (Decoupling Rule)
-  AuthProvider({required AuthRepository authRepository})
-      : _authRepository = authRepository;
+  AuthProvider({required AuthRepository authRepository}) : _authRepository = authRepository;
 
-  // Getters để UI đọc dữ liệu
   User? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated => _currentUser != null;
 
-  // 1. Logic Đăng nhập
+  // Tự động khôi phục session
+  Future<void> tryAutoLogin() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getString('userId');
+    if (userId != null) {
+      _currentUser = await _authRepository.getUserProfile(userId);
+      notifyListeners();
+    }
+  }
+
   Future<bool> login(String username, String password) async {
     _isLoading = true;
     _errorMessage = null;
-    notifyListeners(); // Báo cho UI hiện loading spinner
+    notifyListeners();
 
     final user = await _authRepository.login(username, password);
-
     if (user != null) {
       _currentUser = user;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('userId', user.id); // Lưu lại ID
       _isLoading = false;
-      notifyListeners(); // Báo cho UI tắt loading, chuyển vào màn hình Home
+      notifyListeners();
       return true;
     } else {
-      _errorMessage = "Tên đăng nhập hoặc mật khẩu không chính xác!";
+      _errorMessage = "Sai tài khoản hoặc mật khẩu";
       _isLoading = false;
-      notifyListeners(); // Báo cho UI hiện lỗi
+      notifyListeners();
       return false;
     }
   }
 
-  // 2. Logic Đăng ký (Mặc định là Customer)
   Future<bool> register(Customer customer) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
-    final success = await _authRepository.register(customer);
-
-    if (success) {
+    final error = await _authRepository.register(customer);
+    if (error == null) {
       _isLoading = false;
       notifyListeners();
       return true;
     } else {
-      _errorMessage = "Tên đăng nhập đã tồn tại. Vui lòng thử tên khác!";
+      _errorMessage = error;
       _isLoading = false;
       notifyListeners();
       return false;
     }
   }
 
-  // 3. Đăng xuất
-  void logout() {
+  void logout() async {
     _currentUser = null;
-    notifyListeners(); // Cập nhật UI bay ra màn hình Login
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('userId');
+    notifyListeners();
   }
 }
