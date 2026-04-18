@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 // 1. Import DAOs
+import 'database/daos/recently_viewed_dao.dart';
 import 'database/daos/user_dao.dart';
 import 'database/daos/product_dao.dart';
 import 'database/daos/category_dao.dart';
@@ -24,6 +25,8 @@ import 'providers/product_provider.dart';
 import 'providers/cart_provider.dart';
 import 'providers/order_provider.dart';
 import 'providers/search_provider.dart';
+import 'providers/recently_viewed_provider.dart';
+
 Future<void> main() async {
   // Đảm bảo các widget binding của Flutter được khởi tạo trước khi gọi SQLite
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,6 +42,7 @@ Future<void> main() async {
   final categoryDao = CategoryDao();
   final cartDao = CartDao();
   final orderDao = OrderDao();
+  final recentlyViewedDao = RecentlyViewedDao();
 
   // BƯỚC 2: KHỞI TẠO REPOSITORIES (Bơm DAO vào Repository)
   final authRepo = AuthRepository(userDao: userDao);
@@ -57,6 +61,7 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => OrderProvider(orderRepository: orderRepo)),
         // SearchProvider chưa có repo thì tạo bình thường
         //ChangeNotifierProvider(create: (_) => SearchProvider()),
+        ChangeNotifierProvider(create: (_) => RecentlyViewedProvider(recentlyViewedDao: recentlyViewedDao)),
       ],
       child: const MyApp(),
     ),

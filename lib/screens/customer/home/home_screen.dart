@@ -169,34 +169,34 @@ class _HomeContentState extends State<HomeContent> {
             else
               GridView.builder(
                 shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(), // Vô hiệu hóa cuộn độc lập
+                physics: const NeverScrollableScrollPhysics(),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2, // Chia 2 cột
-                  childAspectRatio: 0.75, // Tỷ lệ thẻ
+                  crossAxisCount: 2,
+                  childAspectRatio: 0.75,
                   crossAxisSpacing: 16,
                   mainAxisSpacing: 16,
                 ),
                 itemCount: products.length,
-                // Tìm đến đoạn GridView.builder trong HomeContent của bạn
                 itemBuilder: (context, index) {
-                  final product = products[index]; // Lấy sản phẩm hiện tại
+                  final product = products[index];
 
-                  return GestureDetector(
+                  return ProductCard(
+                    product: product,
                     onTap: () {
-                      // 1. Lấy userId hiện tại
                       final userId = context.read<AuthProvider>().currentUser?.id;
 
-                      // 2. Nếu đã đăng nhập thì lưu vào lịch sử "Đã xem gần đây"
                       if (userId != null) {
-                        // ĐÃ SỬA LỖI: Dùng product.id thay vì product['id']
+                        // Lưu vào lịch sử đã xem
                         context.read<RecentlyViewedProvider>().addViewedProduct(userId, product.id);
                       }
 
-                      // 3. Chuyển sang màn hình Chi tiết sản phẩm theo nguyên tắc truyền ID (ID-Only Rule)
-                      // ĐÃ SỬA LỖI: Dùng product.id thay vì product['id']
-                      Navigator.pushNamed(context, RouteNames.productDetail, arguments: product.id);
+                      // Chuyển sang màn hình chi tiết
+                      Navigator.pushNamed(
+                          context,
+                          RouteNames.productDetail,
+                          arguments: product.id
+                      );
                     },
-                    child: ProductCard(product: product),
                   );
                 },
               ),
