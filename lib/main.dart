@@ -51,11 +51,12 @@ Future<void> main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider(authRepository: authRepo)),
+        ChangeNotifierProvider.value(value: authProvider),
         ChangeNotifierProvider(create: (_) => ProductProvider(productRepository: productRepo)),
         ChangeNotifierProvider(create: (_) => CartProvider(cartRepository: cartRepo)),
         ChangeNotifierProvider(create: (_) => OrderProvider(orderRepository: orderRepo)),
-        ChangeNotifierProvider.value(value: authProvider),
+        // SearchProvider chưa có repo thì tạo bình thường
+        //ChangeNotifierProvider(create: (_) => SearchProvider()),
       ],
       child: const MyApp(),
     ),
