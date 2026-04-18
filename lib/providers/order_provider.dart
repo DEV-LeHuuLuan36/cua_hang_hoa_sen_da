@@ -45,6 +45,7 @@ class OrderProvider with ChangeNotifier {
     double discountAmount = 0,    // <-- Đã thêm
     double shippingFee = 30000,   // <-- Đã thêm
     String paymentMethod = 'COD', // <-- Đã thêm
+    required String addressId,
   }) async {
     _isLoading = true;
     notifyListeners();
@@ -54,7 +55,7 @@ class OrderProvider with ChangeNotifier {
       'id': orderId,
       'order_number': 'SD${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}',
       'user_id': userId,
-      'address_id': 'mock_address_123',
+      'address_id': addressId,
       'subtotal': totalAmount - shippingFee + discountAmount, // Tính ngược lại tiền hàng gốc
       'shipping_fee': shippingFee,
       'discount': discountAmount,

@@ -7,6 +7,8 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/cart_provider.dart';
 import '../../../providers/order_provider.dart';
 import '../../../providers/product_provider.dart';
+import '../../../providers/user_provider.dart';
+import '../../../models/common/address.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({Key? key}) : super(key: key);
@@ -19,25 +21,41 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   // Trạng thái Phương thức thanh toán
   String _selectedPaymentMethod = 'COD';
 
-  // Trạng thái Voucher & Phí
-  Map<String, dynamic>? _selectedVoucher; // Voucher chọn thủ công
-  bool _isAutoFreeshipApplied = false;   // Cờ kiểm tra ngày đôi
-  double _shippingFee = 30000;           // Phí ship mặc định
-  double _discountAmount = 0;            // Số tiền được giảm
-  double _subTotal = 0;                  // Tổng tiền hàng thực tế
+  // Trạng thái Voucher, Phí & Địa chỉ
+  Map<String, dynamic>? _selectedVoucher;
+  bool _isAutoFreeshipApplied = false;
+  double _shippingFee = 30000;
+  double _discountAmount = 0;
+  double _subTotal = 0;
+  Address? _selectedAddress;
 
   @override
   void initState() {
     super.initState();
-    // Khởi tạo dữ liệu sau khi frame đầu tiên được vẽ
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _calculateInitialTotals();
     });
   }
 
-  void _calculateInitialTotals() {
+  // ĐÓNG NGOẶC CHUẨN Ở ĐÂY
+  void _calculateInitialTotals() async {
     final cartProvider = context.read<CartProvider>();
     final productProvider = context.read<ProductProvider>();
+    final userProvider = context.read<UserProvider>();
+    final authProvider = context.read<AuthProvider>();
+
+    final userId = authProvider.currentUser?.id;
+
+    // Load sổ địa chỉ của user nếu có
+    if (userId != null) {
+      await userProvider.loadUserAddresses(userId);
+      if (userProvider.addresses.isNotEmpty) {
+        _selectedAddress = userProvider.addresses.firstWhere(
+              (addr) => addr.isDefault,
+          orElse: () => userProvider.addresses.first,
+        );
+      }
+    }
 
     // Tính tổng tiền dựa trên số lượng trong giỏ và giá bên bảng Product
     double calculatedSubTotal = 0;
@@ -46,17 +64,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         final product = productProvider.products.firstWhere((p) => p.id == item.productId);
         calculatedSubTotal += product.price * item.quantity;
       } catch (e) {
-        // Bỏ qua nếu không tìm thấy thông tin sản phẩm
+        // Bỏ qua nếu không tìm thấy
       }
     }
 
     setState(() {
-      _subTotal = calculatedSubTotal; // Đã bỏ 'cartProvider.totalAmount' bị lỗi
+      _subTotal = calculatedSubTotal;
       _checkAutoVoucher();
     });
   }
 
-  // Logic kiểm tra Voucher tự động: Tháng trùng Ngày (VD: 9/9, 10/10)
+  // CÁC HÀM NÀY PHẢI NẰM NGOÀI _calculateInitialTotals
   void _checkAutoVoucher() {
     final today = DateTime.now();
     if (today.day == today.month) {
@@ -72,20 +90,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
   }
 
-  // Hàm tính toán và áp dụng Voucher
   void _applyVoucher(Map<String, dynamic>? voucher) {
     setState(() {
       _selectedVoucher = voucher;
       _discountAmount = 0;
-      _shippingFee = 30000; // Reset phí ship về mặc định
+      _shippingFee = 30000;
 
       if (voucher == null) {
-        // Nếu xóa voucher thủ công, quay lại kiểm tra ngày đôi
         _checkAutoVoucher();
         return;
       }
 
-      // Nếu có chọn voucher thủ công, tắt chế độ tự động Freeship ngày đôi
       _isAutoFreeshipApplied = false;
 
       final String type = voucher['type'] ?? '';
@@ -99,7 +114,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           break;
         case 'percent':
           double calculated = (_subTotal * value / 100);
-          // Không vượt quá mức giảm tối đa nếu có
           if (maxDiscount != null && calculated > maxDiscount) {
             _discountAmount = maxDiscount;
           } else {
@@ -120,7 +134,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final cartProvider = context.watch<CartProvider>();
     final items = cartProvider.cartItems;
 
-    // Tính tổng tiền cuối cùng (đảm bảo không âm)
     double totalAmount = (_subTotal + _shippingFee - _discountAmount);
     if (totalAmount < 0) totalAmount = 0;
 
@@ -137,33 +150,45 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Địa chỉ giao hàng (Tạm thời giữ UI cũ của bạn)
+            // 1. ĐỊA CHỈ NHẬN HÀNG
             const Text('Địa chỉ nhận hàng', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
-              child: const Row(
-                children: [
-                  Icon(Icons.location_on, color: AppColors.primary),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Nguyễn Văn A - 0901234567', style: TextStyle(fontWeight: FontWeight.bold)),
-                        SizedBox(height: 4),
-                        Text('Số 123 Đường ABC, Quận 1, TP. HCM', style: TextStyle(color: AppColors.textSecondary)),
-                      ],
+            InkWell(
+              onTap: () async {
+                final selected = await Navigator.pushNamed(context, RouteNames.addressBook);
+                if (selected != null && selected is Address) {
+                  setState(() {
+                    _selectedAddress = selected;
+                  });
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                child: Row(
+                  children: [
+                    const Icon(Icons.location_on, color: AppColors.primary),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _selectedAddress == null
+                          ? const Text('Vui lòng thêm địa chỉ nhận hàng', style: TextStyle(color: Colors.red, fontStyle: FontStyle.italic))
+                          : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('${_selectedAddress!.fullName} - ${_selectedAddress!.phone}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 4),
+                          Text('${_selectedAddress!.addressLine}, ${_selectedAddress!.ward}, ${_selectedAddress!.district}, ${_selectedAddress!.city}', style: const TextStyle(color: AppColors.textSecondary)),
+                        ],
+                      ),
                     ),
-                  ),
-                  Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
-                ],
+                    const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 24),
 
-            // 2. Khuyến mãi / Voucher
+            // 2. KHUYẾN MÃI / VOUCHER
             const Text('Khuyến mãi', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Container(
@@ -183,7 +208,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       ),
                       TextButton(
                         onPressed: () async {
-                          // Chờ kết quả trả về từ màn hình chọn Voucher
                           final result = await Navigator.pushNamed(context, RouteNames.myVouchers);
                           if (result != null && result is Map<String, dynamic>) {
                             _applyVoucher(result);
@@ -193,8 +217,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       )
                     ],
                   ),
-
-                  // Hiển thị Voucher đã chọn thủ công
                   if (_selectedVoucher != null)
                     Container(
                       margin: const EdgeInsets.only(top: 8),
@@ -217,8 +239,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         ],
                       ),
                     ),
-
-                  // Hiển thị Freeship tự động (chỉ hiện khi không có voucher thủ công)
                   if (_isAutoFreeshipApplied)
                     Container(
                       margin: const EdgeInsets.only(top: 8),
@@ -237,7 +257,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ),
             const SizedBox(height: 24),
 
-            // 3. Phương thức thanh toán
+            // 3. PHƯƠNG THỨC THANH TOÁN
             const Text('Phương thức thanh toán', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Container(
@@ -264,7 +284,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ),
             const SizedBox(height: 24),
 
-            // 4. Tổng kết tiền
+            // 4. TỔNG KẾT TIỀN
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
@@ -277,10 +297,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   const SizedBox(height: 12),
                   Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                     const Text('Phí giao hàng'),
-                    Text(
-                        _shippingFee == 0 ? 'Miễn phí' : '${_shippingFee.toInt()}đ',
-                        style: TextStyle(color: _shippingFee == 0 ? Colors.green : AppColors.textPrimary)
-                    )
+                    Text(_shippingFee == 0 ? 'Miễn phí' : '${_shippingFee.toInt()}đ',
+                        style: TextStyle(color: _shippingFee == 0 ? Colors.green : AppColors.textPrimary))
                   ]),
                   if (_discountAmount > 0) ...[
                     const SizedBox(height: 12),
@@ -313,6 +331,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () async {
+              // CHẶN THANH TOÁN NẾU CHƯA CÓ ĐỊA CHỈ
+              if (_selectedAddress == null) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                  content: Text('Vui lòng chọn hoặc thêm địa chỉ nhận hàng trước khi thanh toán!'),
+                  backgroundColor: Colors.red,
+                ));
+                return;
+              }
+
               final authProvider = context.read<AuthProvider>();
               final cartProvider = context.read<CartProvider>();
               final orderProvider = context.read<OrderProvider>();
@@ -322,7 +349,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
               if (userId == null || cart == null || items.isEmpty) return;
 
-              // Truyền toàn bộ dữ liệu tính toán thực tế vào Provider
+              // GỬI DATA KÈM ID ĐỊA CHỈ THẬT
               final success = await orderProvider.placeOrder(
                 userId: userId,
                 cartId: cart.id,
@@ -332,6 +359,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 discountAmount: _discountAmount,
                 shippingFee: _shippingFee,
                 paymentMethod: _selectedPaymentMethod,
+                addressId: _selectedAddress!.id, // <--- Đã sửa ở đây
               );
 
               if (success && context.mounted) {

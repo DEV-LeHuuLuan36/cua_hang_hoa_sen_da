@@ -19,6 +19,7 @@ import '../screens/customer/profile/address_book_screen.dart';
 import '../screens/customer/profile/wishlist_screen.dart';
 import '../screens/customer/profile/my_vouchers_screen.dart';
 import '../screens/customer/profile/recently_viewed_screen.dart';
+import '../screens/customer/profile/add_edit_address_screen.dart';
 
 // Admin
 import '../screens/admin/admin_dashboard_screen.dart';
@@ -99,6 +100,8 @@ class AppRoutes {
       case RouteNames.adminReport:
         return MaterialPageRoute(builder: (_) => const AdminReportScreen());
 
+      case '${RouteNames.addressBook}/add':
+        return MaterialPageRoute(builder: (_) => const AddEditAddressScreen());
     // --- DEFAULT ---
       default:
         return MaterialPageRoute(
