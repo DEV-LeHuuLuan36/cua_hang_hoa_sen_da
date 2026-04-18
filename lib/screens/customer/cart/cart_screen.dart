@@ -47,10 +47,7 @@ class CartScreen extends StatelessWidget {
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
               onPressed: () {
-                // Nếu đang ở màn hình lẻ thì pop về, nếu ở tab thì chuyển sang tab Home
-                if (Navigator.canPop(context)) {
-                  Navigator.pop(context);
-                }
+                Navigator.pushNamedAndRemoveUntil(context, RouteNames.home, (route) => false);
               },
               child: const Text('TIẾP TỤC MUA SẮM', style: TextStyle(color: Colors.white)),
             )

@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../providers/user_provider.dart';
 import '../../../theme/app_colors.dart';
 import '../../../providers/auth_provider.dart';
-
+import 'package:geocoding/geocoding.dart';
 class AddEditAddressScreen extends StatefulWidget {
   final String? addressId; // Nhận addressId (null nếu là thêm mới)
 
@@ -42,7 +42,8 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
     });
   }
 
-  void _onTapMap(LatLng location) {
+  void _onTapMap(LatLng location) async {
+    // 1. Cập nhật vị trí cắm cờ trên bản đồ
     setState(() {
       _markers.clear();
       _markers.add(Marker(
@@ -51,8 +52,23 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
         infoWindow: const InfoWindow(title: 'Vị trí đã chọn'),
       ));
     });
-    // Ở đây bạn có thể dùng thêm package 'geocoding' để tự động
-    // điền _addressLine, _city... dựa vào tọa độ (location)
+
+    // 2. Dịch tọa độ thành text để điền vào Form
+    try {
+      List<Placemark> placemarks = await placemarkFromCoordinates(location.latitude, location.longitude);
+      if (placemarks.isNotEmpty) {
+        Placemark place = placemarks.first;
+        setState(() {
+          // Điền tự động vào các TextField
+          _addressLineController.text = place.street ?? '';
+          _wardController.text = place.subLocality ?? '';
+          _districtController.text = place.locality ?? place.subAdministrativeArea ?? '';
+          _cityController.text = place.administrativeArea ?? '';
+        });
+      }
+    } catch (e) {
+      debugPrint("Lỗi giải mã địa chỉ: $e");
+    }
   }
 
   @override

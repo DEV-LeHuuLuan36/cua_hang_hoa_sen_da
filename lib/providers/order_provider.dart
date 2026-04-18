@@ -41,6 +41,10 @@ class OrderProvider with ChangeNotifier {
     required String cartId,
     required List<Map<String, dynamic>> cartItems,
     required double totalAmount,
+    String? voucherId,            // <-- Đã thêm
+    double discountAmount = 0,    // <-- Đã thêm
+    double shippingFee = 30000,   // <-- Đã thêm
+    String paymentMethod = 'COD', // <-- Đã thêm
   }) async {
     _isLoading = true;
     notifyListeners();
@@ -51,12 +55,13 @@ class OrderProvider with ChangeNotifier {
       'order_number': 'SD${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}',
       'user_id': userId,
       'address_id': 'mock_address_123',
-      'subtotal': totalAmount,
-      'shipping_fee': 30000.0,
-      'discount': 0.0,
-      'total': totalAmount + 30000.0,
-      'payment_method': 'COD',
+      'subtotal': totalAmount - shippingFee + discountAmount, // Tính ngược lại tiền hàng gốc
+      'shipping_fee': shippingFee,
+      'discount': discountAmount,
+      'total': totalAmount, // Số tiền khách thực trả
+      'payment_method': paymentMethod, // Lấy phương thức đã chọn
       'order_status': 'PENDING',
+      'voucher_id': voucherId, // Lưu ID mã giảm giá nếu có
       'created_at': DateTime.now().millisecondsSinceEpoch,
       'updated_at': DateTime.now().millisecondsSinceEpoch,
     };
@@ -73,7 +78,7 @@ class OrderProvider with ChangeNotifier {
       };
     }).toList();
 
-    // SỬA LỖI Ở ĐÂY: Gọi thông qua Repository thay vì chọc thẳng vào DAO
+    // Gọi thông qua Repository
     final success = await orderRepository.createOrder(orderMap, orderItemsMap, cartId);
 
     _isLoading = false;

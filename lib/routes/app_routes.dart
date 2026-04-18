@@ -77,7 +77,8 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const OrderListScreen());
 
       case RouteNames.orderDetail:
-        return MaterialPageRoute(builder: (_) => const OrderDetailScreen());
+        final orderId = settings.arguments as String;
+        return MaterialPageRoute(builder: (_) =>  OrderDetailScreen(orderId: orderId),);
 
     // --- ADMIN ROUTES ---
       case RouteNames.adminDashboard:
