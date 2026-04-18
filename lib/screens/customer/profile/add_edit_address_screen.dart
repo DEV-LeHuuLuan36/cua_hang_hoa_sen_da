@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geocoding/geocoding.dart'; // Đừng quên cài flutter pub add geocoding
+import 'package:permission_handler/permission_handler.dart'; // Thư viện vừa cài
 import 'package:provider/provider.dart';
+
 import '../../../providers/user_provider.dart';
-import '../../../theme/app_colors.dart';
 import '../../../providers/auth_provider.dart';
-import 'package:geocoding/geocoding.dart';
+import '../../../theme/app_colors.dart';
+
 class AddEditAddressScreen extends StatefulWidget {
-  final String? addressId; // Nhận addressId (null nếu là thêm mới)
+  final String? addressId;
 
   const AddEditAddressScreen({Key? key, this.addressId}) : super(key: key);
 
@@ -15,19 +18,38 @@ class AddEditAddressScreen extends StatefulWidget {
 }
 
 class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
-  late GoogleMapController mapController;
+  GoogleMapController? mapController;
 
-  // Tọa độ mặc định (VD: Trung tâm TP.HCM)
   final LatLng _initialPosition = const LatLng(10.776889, 106.700806);
   Set<Marker> _markers = {};
+  bool _hasLocationPermission = false; // Trạng thái quyền
 
-  // Controllers cho các trường trong bảng addresses
   final _fullNameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _addressLineController = TextEditingController();
   final _cityController = TextEditingController();
   final _districtController = TextEditingController();
   final _wardController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _requestLocationPermission(); // Gọi hàm xin quyền ngay khi mở màn hình
+  }
+
+  // HÀM HIỂN THỊ POPUP XIN QUYỀN
+  Future<void> _requestLocationPermission() async {
+    final status = await Permission.locationWhenInUse.request();
+    if (status.isGranted) {
+      setState(() {
+        _hasLocationPermission = true;
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Cần cấp quyền vị trí để sử dụng bản đồ chính xác!')),
+      );
+    }
+  }
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
@@ -42,8 +64,8 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
     });
   }
 
+  // HÀM BẤM VÀO BẢN ĐỒ VÀ DỊCH TỌA ĐỘ
   void _onTapMap(LatLng location) async {
-    // 1. Cập nhật vị trí cắm cờ trên bản đồ
     setState(() {
       _markers.clear();
       _markers.add(Marker(
@@ -53,13 +75,11 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
       ));
     });
 
-    // 2. Dịch tọa độ thành text để điền vào Form
     try {
       List<Placemark> placemarks = await placemarkFromCoordinates(location.latitude, location.longitude);
       if (placemarks.isNotEmpty) {
         Placemark place = placemarks.first;
         setState(() {
-          // Điền tự động vào các TextField
           _addressLineController.text = place.street ?? '';
           _wardController.text = place.subLocality ?? '';
           _districtController.text = place.locality ?? place.subAdministrativeArea ?? '';
@@ -96,7 +116,7 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
       ),
       body: Column(
         children: [
-          // 1. Bản đồ Google Maps
+          // BẢN ĐỒ
           SizedBox(
             height: 250,
             child: GoogleMap(
@@ -104,12 +124,13 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
               initialCameraPosition: CameraPosition(target: _initialPosition, zoom: 15.0),
               markers: _markers,
               onTap: _onTapMap,
-              myLocationEnabled: true,
-              myLocationButtonEnabled: true,
+              // Chỉ bật MyLocation nếu đã được cấp quyền, tránh bị đơ bản đồ
+              myLocationEnabled: _hasLocationPermission,
+              myLocationButtonEnabled: _hasLocationPermission,
             ),
           ),
 
-          // 2. Form nhập liệu chuẩn Data Schema
+          // FORM NHẬP LIỆU
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
@@ -118,21 +139,11 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
                 decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
                 child: Column(
                   children: [
-                    TextField(
-                      controller: _fullNameController,
-                      decoration: const InputDecoration(labelText: 'Tên người nhận (full_name)', prefixIcon: Icon(Icons.person)),
-                    ),
+                    TextField(controller: _fullNameController, decoration: const InputDecoration(labelText: 'Tên người nhận (full_name)', prefixIcon: Icon(Icons.person))),
                     const SizedBox(height: 12),
-                    TextField(
-                      controller: _phoneController,
-                      keyboardType: TextInputType.phone,
-                      decoration: const InputDecoration(labelText: 'Số điện thoại (phone)', prefixIcon: Icon(Icons.phone)),
-                    ),
+                    TextField(controller: _phoneController, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Số điện thoại (phone)', prefixIcon: Icon(Icons.phone))),
                     const SizedBox(height: 12),
-                    TextField(
-                      controller: _cityController,
-                      decoration: const InputDecoration(labelText: 'Tỉnh/Thành phố (city)', prefixIcon: Icon(Icons.location_city)),
-                    ),
+                    TextField(controller: _cityController, decoration: const InputDecoration(labelText: 'Tỉnh/Thành phố (city)', prefixIcon: Icon(Icons.location_city))),
                     const SizedBox(height: 12),
                     Row(
                       children: [
@@ -142,10 +153,7 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    TextField(
-                      controller: _addressLineController,
-                      decoration: const InputDecoration(labelText: 'Số nhà, Tên đường (address_line)', prefixIcon: Icon(Icons.home)),
-                    ),
+                    TextField(controller: _addressLineController, decoration: const InputDecoration(labelText: 'Số nhà, Tên đường', prefixIcon: Icon(Icons.home))),
                   ],
                 ),
               ),
@@ -158,18 +166,15 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
           padding: const EdgeInsets.all(16.0),
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, padding: const EdgeInsets.symmetric(vertical: 16)),
-            onPressed: ()async {
-              // 1. Lấy user hiện tại
+            onPressed: () async {
               final userId = context.read<AuthProvider>().currentUser?.id;
               if (userId == null) return;
 
-              // 2. Kiểm tra dữ liệu rỗng
               if (_fullNameController.text.isEmpty || _phoneController.text.isEmpty || _addressLineController.text.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng nhập đủ thông tin!')));
                 return;
               }
 
-              // 3. Đóng gói dữ liệu
               final addressData = {
                 'full_name': _fullNameController.text.trim(),
                 'phone': _phoneController.text.trim(),
@@ -179,20 +184,14 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
                 'address_line': _addressLineController.text.trim(),
               };
 
-              // 4. Gọi Provider lưu vào SQLite
               final success = await context.read<UserProvider>().addAddress(userId, addressData);
 
-              // 5. Thông báo và thoát
               if (success && context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                  content: Text('Lưu địa chỉ thành công!'),
-                  backgroundColor: AppColors.success,
-                )
-                );
-                Navigator.pop(context); // Trở về màn Sổ địa chỉ
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lưu địa chỉ thành công!'), backgroundColor: AppColors.success));
+                Navigator.pop(context);
               }
             },
-  child: const Text('LƯU ĐỊA CHỈ', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+            child: const Text('LƯU ĐỊA CHỈ', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
           ),
         ),
       ),

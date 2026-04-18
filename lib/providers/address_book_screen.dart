@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../../theme/app_colors.dart';
 import '../../../providers/user_provider.dart';
 import '../../../providers/auth_provider.dart';
@@ -17,7 +18,7 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
   @override
   void initState() {
     super.initState();
-    // Tự động tải danh sách địa chỉ khi mở màn hình
+    // Tự động tải danh sách địa chỉ thật của người dùng khi mở màn hình
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final userId = context.read<AuthProvider>().currentUser?.id;
       if (userId != null) {
@@ -52,10 +53,10 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
             padding: const EdgeInsets.only(bottom: 16),
             child: InkWell(
               onTap: () {
-                // KHI BẤM VÀO: Trả địa chỉ này về cho màn hình Checkout
+                // KHI BẤM VÀO THẺ: Trả địa chỉ này về cho màn hình Checkout
                 Navigator.pop(context, address);
               },
-              child: _buildAddressCard(address),
+              child: _buildAddressCard(address, context),
             ),
           );
         },
@@ -70,9 +71,8 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () {
-              // Mở màn hình thêm địa chỉ mới (Google Maps)
-              Navigator.pushNamed(context, RouteNames.addressBook + '/add');
-              // Lưu ý: Route này tùy bạn đặt trong app_routes.dart nhé
+              // LỆNH MỞ MÀN HÌNH THÊM MỚI (ĐÃ FIX LỖI BẤM KHÔNG ĐƯỢC)
+              Navigator.pushNamed(context, '${RouteNames.addressBook}/add');
             },
             child: const Text('+ THÊM ĐỊA CHỈ MỚI',
                 style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
@@ -95,7 +95,7 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
     );
   }
 
-  Widget _buildAddressCard(Address address) {
+  Widget _buildAddressCard(Address address, BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -113,18 +113,39 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
               const SizedBox(width: 8),
               Text('(${address.phone})', style: const TextStyle(color: AppColors.textSecondary)),
               const Spacer(),
-              if (address.isDefault)
-                const Text('[Mặc định]', style: TextStyle(color: AppColors.error, fontSize: 12, fontWeight: FontWeight.bold)),
+
+              // NÚT CHỈNH SỬA (ĐÃ ĐƯỢC BỌC BẰNG INKWELL ĐỂ BẤM ĐƯỢC)
+              InkWell(
+                onTap: () {
+                  Navigator.pushNamed(
+                    context,
+                    '${RouteNames.addressBook}/edit',
+                    arguments: address.id,
+                  );
+                },
+                child: const Padding(
+                  padding: EdgeInsets.all(4.0),
+                  child: Text('Sửa', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
+                ),
+              ),
+
             ],
           ),
           const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-                color: AppColors.primaryLight.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(4)),
-            child: Text(address.addressType.name == 'HOME' ? 'Nhà riêng' : 'Văn phòng',
-                style: const TextStyle(color: AppColors.primaryDark, fontSize: 12, fontWeight: FontWeight.bold)),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                    color: AppColors.primaryLight.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(4)),
+                child: Text(address.addressType.name == 'HOME' ? 'Nhà riêng' : 'Văn phòng',
+                    style: const TextStyle(color: AppColors.primaryDark, fontSize: 12, fontWeight: FontWeight.bold)),
+              ),
+              const SizedBox(width: 8),
+              if (address.isDefault)
+                const Text('[Mặc định]', style: TextStyle(color: AppColors.error, fontSize: 12, fontWeight: FontWeight.bold)),
+            ],
           ),
           const SizedBox(height: 8),
           Text(

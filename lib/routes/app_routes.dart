@@ -102,6 +102,11 @@ class AppRoutes {
 
       case '${RouteNames.addressBook}/add':
         return MaterialPageRoute(builder: (_) => const AddEditAddressScreen());
+      case '${RouteNames.addressBook}/edit':
+        final addressId = settings.arguments as String?;
+        return MaterialPageRoute(builder: (_) => AddEditAddressScreen(addressId: addressId));
+
+
     // --- DEFAULT ---
       default:
         return MaterialPageRoute(
