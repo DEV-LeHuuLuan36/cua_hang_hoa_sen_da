@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../theme/app_colors.dart';
 import '../../../providers/favorite_provider.dart';
 import '../../../providers/auth_provider.dart';
-import '../../../utils/constants/route_names.dart';
+import '../../../widgets/common/product_card.dart';
 
 class WishlistScreen extends StatefulWidget {
   const WishlistScreen({Key? key}) : super(key: key);
@@ -16,11 +16,11 @@ class _WishlistScreenState extends State<WishlistScreen> {
   @override
   void initState() {
     super.initState();
-    // Tải dữ liệu khi vừa vào màn hình
+    // Tải danh sách yêu thích ngay khi mở trang
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final userId = context.read<AuthProvider>().currentUser?.id;
       if (userId != null) {
-        context.read<FavoriteProvider>().loadFavorites(userId);
+        context.read<FavoriteProvider>().fetchFavorites(userId);
       }
     });
   }
@@ -30,22 +30,27 @@ class _WishlistScreenState extends State<WishlistScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Sản phẩm yêu thích', style: TextStyle(color: AppColors.textPrimary)),
+        title: const Text('Sản phẩm yêu thích', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
-        elevation: 0,
+        elevation: 0.5,
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
       ),
       body: Consumer<FavoriteProvider>(
-        builder: (context, favoriteProvider, child) {
-          if (favoriteProvider.isLoading) {
-            return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+        builder: (context, favProvider, child) {
+          if (favProvider.isLoading) {
+            return const Center(child: CircularProgressIndicator());
           }
 
-          final favorites = favoriteProvider.favoriteProducts;
-
-          if (favorites.isEmpty) {
-            return const Center(
-              child: Text('Bạn chưa yêu thích sản phẩm nào!', style: TextStyle(color: AppColors.textSecondary, fontSize: 16)),
+          if (favProvider.favoriteProducts.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.favorite_border, size: 80, color: Colors.grey.shade300),
+                  const SizedBox(height: 16),
+                  const Text('Danh sách yêu thích trống', style: TextStyle(color: Colors.grey)),
+                ],
+              ),
             );
           }
 
@@ -57,69 +62,10 @@ class _WishlistScreenState extends State<WishlistScreen> {
               crossAxisSpacing: 16,
               mainAxisSpacing: 16,
             ),
-            itemCount: favorites.length,
+            itemCount: favProvider.favoriteProducts.length,
             itemBuilder: (context, index) {
-              final product = favorites[index];
-              return Container(
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Stack(
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                                color: AppColors.primaryLight.withOpacity(0.2),
-                                borderRadius: const BorderRadius.vertical(top: Radius.circular(16))
-                            ),
-                            child: const Center(child: Icon(Icons.eco, size: 50, color: AppColors.primary)),
-                          ),
-                          // Nút Bỏ Tim
-                          Positioned(
-                            top: 8, right: 8,
-                            child: GestureDetector(
-                              onTap: () {
-                                final userId = context.read<AuthProvider>().currentUser?.id;
-                                if (userId != null) {
-                                  context.read<FavoriteProvider>().toggleFavorite(userId, product['id']);
-                                }
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                                child: const Icon(Icons.favorite, color: AppColors.error, size: 20),
-                              ),
-                            ),
-                          )
-                        ],
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(product['name'] ?? 'Sản phẩm', style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
-                          const SizedBox(height: 4),
-                          Text('${product['price']}đ', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 8),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-                              onPressed: () {
-                                // Tương lai: Bấm vào đây sẽ add sản phẩm này vào Giỏ hàng
-                              },
-                              child: const Text('Thêm Giỏ Hàng', style: TextStyle(fontSize: 12, color: Colors.white)),
-                            ),
-                          )
-                        ],
-                      ),
-                    )
-                  ],
-                ),
-              );
+              final product = favProvider.favoriteProducts[index];
+              return ProductCard(product: product);
             },
           );
         },

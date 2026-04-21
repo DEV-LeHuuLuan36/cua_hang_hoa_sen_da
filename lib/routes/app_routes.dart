@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../screens/customer/profile/profile/my_reviews_screen.dart';
+import '../screens/customer/profile/settings_screen.dart';
 import '../utils/constants/route_names.dart';
 
 // Auth
@@ -106,7 +108,10 @@ class AppRoutes {
         final addressId = settings.arguments as String?;
         return MaterialPageRoute(builder: (_) => AddEditAddressScreen(addressId: addressId));
 
-
+      case RouteNames.settings:
+        return MaterialPageRoute(builder: (_) => const SettingsScreen());
+      case RouteNames.myReviews:
+        return MaterialPageRoute(builder: (_) => const MyReviewsScreen());
     // --- DEFAULT ---
       default:
         return MaterialPageRoute(

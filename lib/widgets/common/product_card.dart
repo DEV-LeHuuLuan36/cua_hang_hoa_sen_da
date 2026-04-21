@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart'; // Thêm thư viện Provider
 import '../../models/product/succulent.dart';
 import '../../theme/app_colors.dart';
+import '../../providers/favorite_provider.dart'; // Import Provider
+import '../../providers/auth_provider.dart';     // Import Provider
 
 class ProductCard extends StatelessWidget {
   final Succulent product;
@@ -10,6 +13,13 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Gọi Provider để theo dõi trạng thái yêu thích
+    final favoriteProvider = context.watch<FavoriteProvider>();
+    final authProvider = context.read<AuthProvider>();
+
+    // Kiểm tra xem sản phẩm này có đang nằm trong danh sách yêu thích không
+    final isLiked = favoriteProvider.isFavorite(product.id);
+
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -24,17 +34,61 @@ class ProductCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Khung ảnh sản phẩm
+              // Sử dụng Stack để đè nút tim lên hình ảnh
               Expanded(
-                child: Container(
-                  width: double.infinity,
-                  decoration: const BoxDecoration(
-                    color: AppColors.background,
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-                  ),
-                  child: const Icon(Icons.eco, size: 40, color: AppColors.primaryLight),
+                child: Stack(
+                  children: [
+                    // 1. Khung nền ảnh sản phẩm
+                    Container(
+                      width: double.infinity,
+                      decoration: const BoxDecoration(
+                        color: AppColors.background,
+                        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                      ),
+                      child: const Icon(Icons.eco, size: 40, color: AppColors.primaryLight),
+                    ),
+
+                    // 2. Nút Thả tim góc phải trên
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: GestureDetector(
+                        onTap: () {
+                          final userId = authProvider.currentUser?.id;
+                          if (userId != null) {
+                            // Gọi hàm thêm/xóa khỏi Wishlist
+                            favoriteProvider.toggleFavorite(userId, product);
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Vui lòng đăng nhập để lưu yêu thích!')),
+                            );
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.9), // Nền trắng mờ để nổi bật icon
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              )
+                            ],
+                          ),
+                          child: Icon(
+                            isLiked ? Icons.favorite : Icons.favorite_border,
+                            color: isLiked ? Colors.red : Colors.grey,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
+
               // Thông tin sản phẩm
               Padding(
                 padding: const EdgeInsets.all(12.0),

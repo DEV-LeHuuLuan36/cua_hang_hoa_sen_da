@@ -124,7 +124,7 @@ class _HomeContentState extends State<HomeContent> {
 
             // Banner Quảng Cáo
             Container(
-              height: 160,
+              //height: 160,
               width: double.infinity,
               decoration: BoxDecoration(
                 gradient: const LinearGradient(colors: [AppColors.primaryLight, AppColors.primary], begin: Alignment.topLeft, end: Alignment.bottomRight),

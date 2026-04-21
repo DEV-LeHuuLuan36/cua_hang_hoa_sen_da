@@ -19,6 +19,8 @@ class RouteNames {
   static const String wishlist = '/wishlist';
   static const String myVouchers = '/my-vouchers';
   static const String recentlyViewed = '/recently-viewed';
+  static const String settings = '/settings';
+  static const String myReviews = '/my-reviews';
 
   // Admin
   static const String adminDashboard = '/admin-dashboard';

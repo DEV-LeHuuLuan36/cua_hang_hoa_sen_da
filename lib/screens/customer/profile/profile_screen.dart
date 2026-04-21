@@ -1,16 +1,61 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../theme/app_colors.dart';
 import '../../../utils/constants/route_names.dart';
+import '../../../providers/order_provider.dart';
+import '../../../providers/auth_provider.dart';
+import '../../../models/user/customer.dart';
+import '../../../models/enums/membership_level.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    // 1. Lấy thông tin từ AuthProvider
+    final authProvider = context.watch<AuthProvider>();
+    final user = authProvider.currentUser;
+
+    // 2. Lấy dữ liệu đơn hàng
+    final orderProvider = context.watch<OrderProvider>();
+    final myOrders = orderProvider.myOrders;
+
+    int pendingCount = myOrders.where((order) => order['order_status'] == 'PENDING').length;
+    int shippingCount = myOrders.where((order) => order['order_status'] == 'SHIPPING').length;
+    int completedCount = myOrders.where((order) => order['order_status'] == 'DELIVERED').length;
+
+    // 3. Xử lý logic hiển thị thông tin thực tế
+    String displayName = user?.fullName ?? 'Khách hàng';
+    String displayLevel = 'Thành viên Đồng'; // Mặc định là Đồng
+    Color levelColor = Colors.brown.shade600;
+
+    // SỬ DỤNG ĐÚNG THUỘC TÍNH membershipLevel TỪ FILE BẠN CUNG CẤP
+    if (user != null) {
+      switch (user.membershipLevel) {
+        case MembershipLevel.BRONZE:
+          displayLevel = 'Thành viên Đồng';
+          levelColor = Colors.brown.shade600;
+          break;
+        case MembershipLevel.SILVER:
+          displayLevel = 'Thành viên Bạc';
+          levelColor = Colors.grey.shade600;
+          break;
+        case MembershipLevel.GOLD:
+          displayLevel = 'Thành viên Vàng';
+          levelColor = Colors.orange.shade700;
+          break;
+        case MembershipLevel.PLATINUM:
+          displayLevel = 'Thành viên Bạch kim';
+          levelColor = Colors.blue.shade800;
+          break;
+      }
+    }
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Hồ sơ cá nhân', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
+        title: const Text('Hồ sơ cá nhân',
+            style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
@@ -18,7 +63,7 @@ class ProfileScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.settings_outlined, color: AppColors.textPrimary),
             onPressed: () {
-              // Cài đặt tài khoản
+              Navigator.pushNamed(context, RouteNames.settings);
             },
           )
         ],
@@ -26,7 +71,7 @@ class ProfileScreen extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // 1. Header: Avatar & Thông tin (Dữ liệu tĩnh)
+            // Header: Hiển thị thông tin tên và cấp độ thực tế
             Padding(
               padding: const EdgeInsets.all(20.0),
               child: Row(
@@ -41,14 +86,14 @@ class ProfileScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Nguyễn Văn A', // Mock data
-                          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                        Text(
+                          displayName, // Hiển thị tên thực tế (ví dụ: Lê Hữu Luân)
+                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Thành viên Vàng (Gold)', // Mock data
-                          style: TextStyle(color: Colors.orange.shade700, fontWeight: FontWeight.bold),
+                          displayLevel, // Hiển thị cấp độ thành viên tương ứng
+                          style: TextStyle(color: levelColor, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -57,7 +102,7 @@ class ProfileScreen extends StatelessWidget {
               ),
             ),
 
-            // 2. Thống kê đơn hàng nhanh
+            // Thống kê đơn hàng nhanh
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: Container(
@@ -70,29 +115,31 @@ class ProfileScreen extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    _buildStatusIcon(Icons.inventory_2_outlined, 'Chờ xác nhận', 2),
-                    _buildStatusIcon(Icons.local_shipping_outlined, 'Đang giao', 1),
-                    _buildStatusIcon(Icons.check_circle_outline, 'Hoàn thành', 0),
+                    _buildStatusIcon(Icons.inventory_2_outlined, 'Chờ xác nhận', pendingCount),
+                    _buildStatusIcon(Icons.local_shipping_outlined, 'Đang giao', shippingCount),
+                    _buildStatusIcon(Icons.check_circle_outline, 'Hoàn thành', completedCount),
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 24),
 
-            // 3. Danh sách Menu chức năng
+            // Danh sách Menu chức năng
             Container(
               color: Colors.white,
               child: Column(
                 children: [
                   _buildMenuItem(context, Icons.receipt_long, 'Đơn hàng của tôi', RouteNames.orderList),
                   const Divider(height: 1, indent: 56),
-                  _buildMenuItem(context, Icons.location_on_outlined, 'Sổ địa chỉ', RouteNames.addressBook), // Dẫn sang trang Sổ địa chỉ
+                  _buildMenuItem(context, Icons.location_on_outlined, 'Sổ địa chỉ', RouteNames.addressBook),
                   const Divider(height: 1, indent: 56),
-                  _buildMenuItem(context, Icons.favorite_border, 'Sản phẩm yêu thích', ''),
+                  _buildMenuItem(context, Icons.favorite_border, 'Sản phẩm yêu thích', RouteNames.wishlist),
                   const Divider(height: 1, indent: 56),
-                  _buildMenuItem(context, Icons.star_border, 'Đánh giá của tôi', ''),
+                  _buildMenuItem(context, Icons.confirmation_number_outlined, 'Voucher của tôi', RouteNames.myVouchers),
                   const Divider(height: 1, indent: 56),
-                  _buildMenuItem(context, Icons.confirmation_number_outlined, 'Voucher của tôi', ''),
+                  _buildMenuItem(context, Icons.history, 'Đã xem gần đây', RouteNames.recentlyViewed),
+                  const Divider(height: 1, indent: 56),
+                  _buildMenuItem(context, Icons.star_border, 'Đánh giá của tôi', RouteNames.myReviews),
                 ],
               ),
             ),
@@ -111,7 +158,7 @@ class ProfileScreen extends StatelessWidget {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   onPressed: () {
-                    // Logic đăng xuất (Tạm thời chỉ quay về màn hình Login)
+                    authProvider.logout();
                     Navigator.pushReplacementNamed(context, RouteNames.login);
                   },
                   child: const Text('ĐĂNG XUẤT', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
@@ -157,25 +204,10 @@ class ProfileScreen extends StatelessWidget {
       trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
       onTap: () {
         if (route.isNotEmpty) {
-          // 3. Danh sách Menu chức năng
-          Container(
-            color: Colors.white,
-            child: Column(
-              children: [
-                _buildMenuItem(context, Icons.receipt_long, 'Đơn hàng của tôi', RouteNames.orderList),
-                const Divider(height: 1, indent: 56),
-                _buildMenuItem(context, Icons.location_on_outlined, 'Sổ địa chỉ', RouteNames.addressBook),
-                const Divider(height: 1, indent: 56),
-                _buildMenuItem(context, Icons.favorite_border, 'Sản phẩm yêu thích', '/wishlist'), // Nối màn Yêu thích
-                const Divider(height: 1, indent: 56),
-                _buildMenuItem(context, Icons.confirmation_number_outlined, 'Voucher của tôi', '/my-vouchers'), // Nối màn Voucher
-                const Divider(height: 1, indent: 56),
-                _buildMenuItem(context, Icons.history, 'Đã xem gần đây', '/recently-viewed'),
-                const Divider(height: 1, indent: 56),
-                _buildMenuItem(context, Icons.star_border, 'Đánh giá của tôi', ''),
-
-              ],
-            ),
+          Navigator.pushNamed(context, route);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Tính năng đang phát triển'), duration: Duration(seconds: 1)),
           );
         }
       },
