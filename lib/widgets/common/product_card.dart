@@ -4,12 +4,21 @@ import '../../models/product/succulent.dart';
 import '../../theme/app_colors.dart';
 import '../../providers/favorite_provider.dart'; // Import Provider
 import '../../providers/auth_provider.dart';     // Import Provider
+import 'pressable_scale.dart';
 
 class ProductCard extends StatelessWidget {
   final Succulent product;
   final VoidCallback? onTap;
+  final bool enablePressScale;
+  final double pressedScale;
 
-  const ProductCard({Key? key, required this.product, this.onTap}) : super(key: key);
+  const ProductCard({
+    Key? key,
+    required this.product,
+    this.onTap,
+    this.enablePressScale = true,
+    this.pressedScale = 0.95,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +29,7 @@ class ProductCard extends StatelessWidget {
     // Kiểm tra xem sản phẩm này có đang nằm trong danh sách yêu thích không
     final isLiked = favoriteProvider.isFavorite(product.id);
 
-    return Card(
+    final card = Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
@@ -67,11 +76,11 @@ class ProductCard extends StatelessWidget {
                         child: Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.9), // Nền trắng mờ để nổi bật icon
+                            color: Colors.white.withValues(alpha: 0.9), // Nền trắng mờ để nổi bật icon
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
+                                color: Colors.black.withValues(alpha: 0.1),
                                 blurRadius: 4,
                                 offset: const Offset(0, 2),
                               )
@@ -117,6 +126,13 @@ class ProductCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+
+    if (!enablePressScale) return card;
+
+    return PressableScale(
+      pressedScale: pressedScale,
+      child: card,
     );
   }
 }

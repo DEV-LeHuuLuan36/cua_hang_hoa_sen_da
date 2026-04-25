@@ -65,7 +65,10 @@ class _WishlistScreenState extends State<WishlistScreen> {
             itemCount: favProvider.favoriteProducts.length,
             itemBuilder: (context, index) {
               final product = favProvider.favoriteProducts[index];
-              return ProductCard(product: product);
+              return ProductCard(
+                product: product,
+                enablePressScale: true,
+              );
             },
           );
         },

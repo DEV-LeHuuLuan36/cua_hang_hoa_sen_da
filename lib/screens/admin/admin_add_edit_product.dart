@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/product/care_instruction.dart';
 import '../../models/product/succulent.dart';
+import '../../models/enums/product_status.dart';
 import '../../providers/product_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/common/custom_text_field.dart';
@@ -24,6 +25,42 @@ class _AdminAddEditProductScreenState extends State<AdminAddEditProductScreen> {
 
   // Biến cờ kiểm tra xem đang Thêm hay Sửa
   bool get isEditing => widget.productId != null;
+  Succulent? _editingProduct;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (isEditing) {
+        final productProvider = context.read<ProductProvider>();
+        if (productProvider.products.isEmpty) {
+          productProvider.loadAllProducts().then((_) {
+            if (mounted) {
+              _fillFormForEditing(productProvider);
+            }
+          });
+          return;
+        }
+        _fillFormForEditing(productProvider);
+      }
+    });
+  }
+
+  void _fillFormForEditing(ProductProvider productProvider) {
+    if (!isEditing) return;
+    final product = productProvider.products.cast<Succulent?>().firstWhere(
+          (p) => p?.id == widget.productId,
+          orElse: () => null,
+        );
+    if (product != null) {
+      _editingProduct = product;
+      _nameController.text = product.name;
+      _priceController.text = product.price.toStringAsFixed(0);
+      _stockController.text = product.stock.toString();
+      _descController.text = product.description ?? '';
+      setState(() {});
+    }
+  }
 
   @override
   void dispose() {
@@ -43,35 +80,41 @@ class _AdminAddEditProductScreenState extends State<AdminAddEditProductScreen> {
 
     final productProvider = Provider.of<ProductProvider>(context, listen: false);
 
-    // 2. Tạo đối tượng Sản phẩm (Tạm dùng category_id mặc định vì chưa làm màn hình Danh mục)
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final old = _editingProduct;
     final newProduct = Succulent(
-      id: isEditing ? widget.productId! : 'prod_${DateTime.now().millisecondsSinceEpoch}',
-      categoryId: 'cat_default',
+      id: isEditing ? widget.productId! : 'prod_$now',
+      categoryId: old?.categoryId ?? 'cat_default',
       name: _nameController.text.trim(),
       description: _descController.text.trim(),
       price: double.tryParse(_priceController.text.trim()) ?? 0.0,
       stock: int.tryParse(_stockController.text.trim()) ?? 0,
-
-      // --- BỔ SUNG CÁC THAM SỐ BẮT BUỘC MÀ MODEL YÊU CẦU Ở ĐÂY ---
-      careInstruction: CareInstruction(
-        careLevel: 'EASY',
-        lightRequirement: 'MEDIUM',
-        waterRequirement: 'LOW',
-      ),
-      // Nếu model của bạn yêu cầu thêm ảnh, size, color... bạn cũng truyền giá trị mặc định vào đây, ví dụ:
-      // size: 'Nhỏ',
-      // color: 'Xanh',
-      // -----------------------------------------------------------
-
-      createdAt: DateTime.now().millisecondsSinceEpoch,
-      updatedAt: DateTime.now().millisecondsSinceEpoch,
+      scientificName: old?.scientificName,
+      salePrice: old?.salePrice,
+      sku: old?.sku,
+      status: old?.status ?? ProductStatus.AVAILABLE,
+      size: old?.size,
+      color: old?.color,
+      origin: old?.origin,
+      careInstruction: old?.careInstruction ??
+          CareInstruction(
+            careLevel: 'EASY',
+            lightRequirement: 'MEDIUM',
+            waterRequirement: 'LOW',
+          ),
+      isBestseller: old?.isBestseller ?? false,
+      isNew: old?.isNew ?? true,
+      rating: old?.rating ?? 0,
+      reviewCount: old?.reviewCount ?? 0,
+      views: old?.views ?? 0,
+      createdAt: old?.createdAt ?? now,
+      updatedAt: now,
     );
 
     // 3. Gọi lưu vào Provider
     bool success;
     if (isEditing) {
-      // Tương lai sẽ thêm hàm updateProduct
-      success = false;
+      success = await productProvider.updateProduct(newProduct);
     } else {
       success = await productProvider.addProduct(newProduct);
     }

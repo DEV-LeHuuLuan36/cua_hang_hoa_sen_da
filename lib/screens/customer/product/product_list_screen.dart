@@ -1,12 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../providers/product_provider.dart';
 import '../../../theme/app_colors.dart';
 import '../../../utils/constants/route_names.dart';
+import '../../../widgets/common/product_card.dart';
 
-class ProductListScreen extends StatelessWidget {
+class ProductListScreen extends StatefulWidget {
   const ProductListScreen({Key? key}) : super(key: key);
 
   @override
+  State<ProductListScreen> createState() => _ProductListScreenState();
+}
+
+class _ProductListScreenState extends State<ProductListScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ProductProvider>().loadAllProducts();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final productProvider = context.watch<ProductProvider>();
+    final products = productProvider.products;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -69,83 +88,32 @@ class ProductListScreen extends StatelessWidget {
 
           // 2. Lưới danh sách sản phẩm (Grid View)
           Expanded(
-            child: GridView.builder(
-              padding: const EdgeInsets.all(16),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 0.7,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-              ),
-              itemCount: 6, // Hiển thị 6 sản phẩm mẫu
-              itemBuilder: (context, index) {
-                return GestureDetector(
-                  onTap: () {
-                    // Bấm vào thẻ sản phẩm -> Đi tới Chi tiết sản phẩm (Truyền ID giả)
-                    Navigator.pushNamed(context, RouteNames.productDetail, arguments: 'mock_id_$index');
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8)],
+            child: productProvider.isLoading
+                ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                : GridView.builder(
+                    padding: const EdgeInsets.all(16),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      childAspectRatio: 0.7,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Ảnh sản phẩm
-                        Expanded(
-                          child: Stack(
-                            children: [
-                              Container(
-                                width: double.infinity,
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryLight.withOpacity(0.2),
-                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                                ),
-                                child: const Center(child: Icon(Icons.eco, size: 50, color: AppColors.primary)),
-                              ),
-                              // Badge giảm giá
-                              if (index % 2 == 0) // Giả lập vài sản phẩm có KM
-                                Positioned(
-                                  top: 8, left: 8,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(color: AppColors.error, borderRadius: BorderRadius.circular(4)),
-                                    child: const Text('-20%', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                                  ),
-                                )
-                            ],
-                          ),
-                        ),
-                        // Thông tin
-                        Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Sen đá Echeveria $index', style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1),
-                              const SizedBox(height: 4),
-                              const Text('50,000đ', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: const [
-                                  Icon(Icons.star, color: AppColors.accent, size: 14),
-                                  SizedBox(width: 4),
-                                  Text('4.9', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                                  Spacer(),
-                                  Text('Đã bán 12k', style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
-                                ],
-                              )
-                            ],
-                          ),
-                        )
-                      ],
-                    ),
+                    itemCount: products.length,
+                    itemBuilder: (context, index) {
+                      final product = products[index];
+                      return ProductCard(
+                        product: product,
+                        enablePressScale: true,
+                        onTap: () {
+                          Navigator.pushNamed(
+                            context,
+                            RouteNames.productDetail,
+                            arguments: product.id,
+                          );
+                        },
+                      );
+                    },
                   ),
-                );
-              },
-            ),
           ),
         ],
       ),

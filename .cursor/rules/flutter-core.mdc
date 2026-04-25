@@ -1,0 +1,9 @@
+---
+description: Quy tắc cốt lõi cho dự án Flutter
+globs: lib/**/*.dart, pubspec.yaml
+---
+# Flutter Core Rules
+- Ưu tiên sử dụng StatelessWidget trừ khi thực sự cần State.
+- Sử dụng `const` tối đa để tối ưu hiệu suất render.
+- Quản lý state: [Luân điền Provider/Bloc/GetX vào đây].
+- Luôn sử dụng `flutter_lints` và tuân thủ quy tắc lồng widget tối đa 4 cấp.

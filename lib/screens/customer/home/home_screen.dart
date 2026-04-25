@@ -115,7 +115,7 @@ class _HomeContentState extends State<HomeContent> {
                   ],
                 ),
                 Container(
-                  decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)]),
+                  decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)]),
                   child: IconButton(icon: const Icon(Icons.notifications_outlined, color: AppColors.primaryDark), onPressed: () {}),
                 )
               ],
@@ -129,7 +129,7 @@ class _HomeContentState extends State<HomeContent> {
               decoration: BoxDecoration(
                 gradient: const LinearGradient(colors: [AppColors.primaryLight, AppColors.primary], begin: Alignment.topLeft, end: Alignment.bottomRight),
                 borderRadius: BorderRadius.circular(20),
-                boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 8))],
+                boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 15, offset: const Offset(0, 8))],
               ),
               child: const Padding(
                 padding: EdgeInsets.all(20.0),
@@ -180,23 +180,36 @@ class _HomeContentState extends State<HomeContent> {
                 itemBuilder: (context, index) {
                   final product = products[index];
 
-                  return ProductCard(
-                    product: product,
-                    onTap: () {
-                      final userId = context.read<AuthProvider>().currentUser?.id;
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    curve: Curves.fastOutSlowIn,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.textPrimary.withValues(alpha: 0.08),
+                          blurRadius: 14,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: ProductCard(
+                      product: product,
+                      enablePressScale: true,
+                      onTap: () {
+                        final userId = context.read<AuthProvider>().currentUser?.id;
 
-                      if (userId != null) {
-                        // Lưu vào lịch sử đã xem
-                        context.read<RecentlyViewedProvider>().addViewedProduct(userId, product.id);
-                      }
+                        if (userId != null) {
+                          context.read<RecentlyViewedProvider>().addViewedProduct(userId, product.id);
+                        }
 
-                      // Chuyển sang màn hình chi tiết
-                      Navigator.pushNamed(
+                        Navigator.pushNamed(
                           context,
                           RouteNames.productDetail,
-                          arguments: product.id
-                      );
-                    },
+                          arguments: product.id,
+                        );
+                      },
+                    ),
                   );
                 },
               ),

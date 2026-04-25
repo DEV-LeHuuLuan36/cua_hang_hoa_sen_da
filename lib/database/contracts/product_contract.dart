@@ -9,6 +9,7 @@ class ProductContract {
   static const String colPrice = 'price';
   static const String colSalePrice = 'sale_price';
   static const String colStock = 'stock';
+  static const String colQuantity = colStock;
   static const String colSku = 'sku';
   static const String colStatus = 'status';
   static const String colSize = 'size';

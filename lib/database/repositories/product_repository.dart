@@ -69,6 +69,26 @@ class ProductRepository {
       return false;
     }
   }
+
+  Future<bool> updateProduct(Succulent product) async {
+    try {
+      final result = await _productDao.updateProduct(product);
+      return result > 0;
+    } catch (e) {
+      print("Lỗi cập nhật sản phẩm: $e");
+      return false;
+    }
+  }
+
+  Future<bool> deleteProduct(String productId) async {
+    try {
+      final result = await _productDao.deleteProduct(productId);
+      return result > 0;
+    } catch (e) {
+      print("Lỗi xóa sản phẩm: $e");
+      return false;
+    }
+  }
   Future<List<Succulent>> searchProducts({
     String keyword = '',
     double? minPrice,

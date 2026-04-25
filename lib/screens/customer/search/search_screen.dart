@@ -5,6 +5,7 @@ import '../../../providers/search_provider.dart';
 import '../../../providers/recently_viewed_provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../utils/constants/route_names.dart';
+import '../../../widgets/common/product_card.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({Key? key}) : super(key: key);
@@ -176,45 +177,16 @@ class _SearchScreenState extends State<SearchScreen> {
             itemCount: results.length,
             itemBuilder: (context, index) {
               final product = results[index];
-              return GestureDetector(
+              return ProductCard(
+                product: product,
+                enablePressScale: true,
                 onTap: () {
-                  // Lưu lịch sử xem trước khi điều hướng [3, 7]
                   final userId = context.read<AuthProvider>().currentUser?.id;
                   if (userId != null) {
                     context.read<RecentlyViewedProvider>().addViewedProduct(userId, product.id);
                   }
-
-                  // Tuân thủ ID-Only Rule: Chuyển sang màn chi tiết bằng arguments là id [3]
                   Navigator.pushNamed(context, RouteNames.productDetail, arguments: product.id);
                 },
-                child: Container(
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                              color: AppColors.primaryLight.withOpacity(0.2),
-                              borderRadius: const BorderRadius.vertical(top: Radius.circular(16))
-                          ),
-                          child: const Center(child: Icon(Icons.eco, size: 50, color: AppColors.primary)),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(product.name, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1),
-                            const SizedBox(height: 4),
-                            Text('${product.price}đ', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
-                          ],
-                        ),
-                      )
-                    ],
-                  ),
-                ),
               );
             },
           );

@@ -4,6 +4,21 @@ import '../database_helper.dart';
 class OrderDao {
   Future<Database> get db async => await DatabaseHelper.instance.database;
 
+  Future<void> createOrderInTransaction(
+    Transaction txn,
+    Map<String, dynamic> orderMap,
+    List<Map<String, dynamic>> orderItemsMap,
+    String cartId,
+  ) async {
+    await txn.insert('orders', orderMap);
+
+    for (var item in orderItemsMap) {
+      await txn.insert('order_items', item);
+    }
+
+    await txn.delete('cart_items', where: 'cart_id = ?', whereArgs: [cartId]);
+  }
+
   // 1. Tạo đơn hàng (Dùng Transaction để đảm bảo tính toàn vẹn)
   Future<bool> createOrder(
       Map<String, dynamic> orderMap,
@@ -13,16 +28,7 @@ class OrderDao {
 
     try {
       await database.transaction((txn) async {
-        // 1.1 Insert bảng orders [1]
-        await txn.insert('orders', orderMap);
-
-        // 1.2 Insert bảng order_items [2]
-        for (var item in orderItemsMap) {
-          await txn.insert('order_items', item);
-        }
-
-        // 1.3 Xóa các item trong giỏ hàng (cart_items) [3]
-        await txn.delete('cart_items', where: 'cart_id = ?', whereArgs: [cartId]);
+        await createOrderInTransaction(txn, orderMap, orderItemsMap, cartId);
       });
       return true;
     } catch (e) {

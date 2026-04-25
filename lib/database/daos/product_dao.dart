@@ -68,6 +68,15 @@ class ProductDao {
       whereArgs: [product.id],
     );
   }
+
+  Future<int> deleteProduct(String productId) async {
+    final db = await _dbHelper.database;
+    return await db.delete(
+      ProductContract.tableName,
+      where: '${ProductContract.colId} = ?',
+      whereArgs: [productId],
+    );
+  }
   Future<List<Map<String, dynamic>>> searchAndFilterProducts({
     String keyword = '',
     double? minPrice,
@@ -100,5 +109,26 @@ class ProductDao {
     }
 
     return await database.rawQuery(query, args);
+  }
+
+  Future<void> decrementStockInTransaction(
+    Transaction txn,
+    String productId,
+    int quantity,
+  ) async {
+    final updatedRows = await txn.rawUpdate(
+      '''
+      UPDATE ${ProductContract.tableName}
+      SET ${ProductContract.colQuantity} = ${ProductContract.colQuantity} - ?,
+          ${ProductContract.colUpdatedAt} = ?
+      WHERE ${ProductContract.colId} = ?
+        AND ${ProductContract.colQuantity} >= ?
+      ''',
+      [quantity, DateTime.now().millisecondsSinceEpoch, productId, quantity],
+    );
+
+    if (updatedRows == 0) {
+      throw Exception('Không đủ tồn kho cho sản phẩm: $productId');
+    }
   }
 }

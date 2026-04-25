@@ -1,13 +1,46 @@
 import '../daos/order_dao.dart';
+import '../daos/product_dao.dart';
+import '../contracts/order_contract.dart';
+import '../database_helper.dart';
 
 class OrderRepository {
   final OrderDao orderDao;
+  final ProductDao _productDao;
 
-  OrderRepository({required this.orderDao});
+  OrderRepository({
+    required this.orderDao,
+    ProductDao? productDao,
+  }) : _productDao = productDao ?? ProductDao();
 
   // Cầu nối tạo đơn hàng
-  Future<bool> createOrder(Map<String, dynamic> orderMap, List<Map<String, dynamic>> orderItemsMap, String cartId) async {
-    return await orderDao.createOrder(orderMap, orderItemsMap, cartId);
+  Future<bool> createOrder(
+    Map<String, dynamic> orderMap,
+    List<Map<String, dynamic>> orderItemsMap,
+    String cartId,
+  ) async {
+    final database = await DatabaseHelper.instance.database;
+
+    try {
+      await database.transaction((txn) async {
+        await orderDao.createOrderInTransaction(txn, orderMap, orderItemsMap, cartId);
+
+        for (final item in orderItemsMap) {
+          final productId = item[OrderItemContract.colProductId]?.toString();
+          final quantityRaw = item[OrderItemContract.colQuantity];
+          final quantity = quantityRaw is int ? quantityRaw : int.tryParse('$quantityRaw');
+
+          if (productId == null || quantity == null || quantity <= 0) {
+            continue;
+          }
+
+          await _productDao.decrementStockInTransaction(txn, productId, quantity);
+        }
+      });
+      return true;
+    } catch (e) {
+      print('Lỗi tạo đơn hàng và trừ tồn kho: $e');
+      return false;
+    }
   }
 
   // Cầu nối lấy danh sách đơn hàng
