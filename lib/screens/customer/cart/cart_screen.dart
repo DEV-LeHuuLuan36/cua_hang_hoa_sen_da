@@ -34,6 +34,16 @@ class CartScreen extends StatelessWidget {
         elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.primaryDark),
         centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              Navigator.pushReplacementNamed(context, RouteNames.home);
+            }
+          },
+        ),
       ),
       body: cartItems.isEmpty
           ? Center(

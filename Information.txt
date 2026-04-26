@@ -1,0 +1,28 @@
+Dựa trên cấu trúc dự án **CUA_HANG_HOA_SEN_DA** và các tệp tin bạn đã tải lên, dưới đây là danh sách các tệp `.mdc` (Cursor Rules) và `.md` (Markdown) mà bạn có thể sử dụng để tối ưu hóa AI cho dự án của mình:
+
+### 1. Nhóm Quy tắc Hành vi AI (Đã có sẵn)
+Đây là các file quy định cách AI suy nghĩ và tương tác với bạn:
+`agentic-coding.mdc`**: Tập trung vào tiến độ từng bước, tính tự chủ an toàn và theo dõi trạng thái công việc
+`code-quality.mdc`**: Đảm bảo code tối giản, tránh thiết kế quá mức (over-engineering) và tuân thủ các nguyên tắc triển khai
+`core-behavior.mdc`**: Quy định sự rõ ràng, trực tiếp và yêu cầu AI phải điều tra mã nguồn trước khi trả lời
+`output-format.mdc`**: Kiểm soát phong cách trả lời ngắn gọn, có cấu trúc và tránh các câu dẫn rườm rà
+`thinking-reasoning.mdc`**: Hướng dẫn AI cách suy luận, tự kiểm tra và điều chỉnh nỗ lực tùy theo độ khó của tác vụ
+`tool-usage.mdc`**: Tối ưu hóa việc sử dụng các công cụ như đọc/ghi file và gọi lệnh song song để tăng hiệu suất
+
+### 2. Nhóm Quy tắc Kỹ thuật (Đề xuất cho Flutter/Android)
+Dựa trên mã nguồn hiện tại của bạn, bạn nên tạo thêm các file này trong thư mục `.cursor/rules/`:
+* **`state-management-provider.mdc`**: Quản lý logic cho các file trong `lib/providers/`, quy định cách dùng `notifyListeners()` và xử lý bất đồng bộ.
+* **`local-database-sqflite.mdc`**: Quy định cách tương tác với SQLite thông qua các DAO và Contract trong `lib/database/`.
+* **`ui-theme-consistency.mdc`**: Đảm bảo AI luôn dùng đúng bảng màu `AppColors` và font **Plus Jakarta Sans** từ thư mục `assets/fonts/`.
+* **`models-data-mapping.mdc`**: Quy định cấu trúc của các model trong `lib/models/`, bắt buộc có `fromMap` và `toMap`.
+* **`android-optimization.mdc`**: Tập trung vào các cấu hình trong thư mục `android/`, tối ưu hóa `AndroidManifest.xml` và file `build.gradle`.
+
+### 3. Nhóm Quản lý Dự án (Markdown)
+* **`README.md`**: Tệp tin mô tả tổng quan về dự án, cách cài đặt và chạy ứng dụng.
+* **`AGENTS.md`**: (Nên tạo) Đóng vai trò là "bộ nhớ dài hạn", lưu trữ tiến độ dự án, các quyết định kỹ thuật quan trọng và lộ trình phát triển tiếp theo.
+
+### Tóm tắt số lượng file bạn có thể sở hữu:
+1.  Hành vi: 6 file (đã có)
+2.  **Kỹ thuật**: 4 - 6 file (tùy nhu cầu mở rộng).
+3.  **Bối cảnh**: 2 file (`README.md` và `AGENTS.md`).
+

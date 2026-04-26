@@ -13,6 +13,8 @@ import '../../../models/common/address.dart';
 import '../../../models/cart/cart_item.dart';
 import '../../../models/product/succulent.dart';
 import '../../../widgets/common/pressable_scale.dart';
+import '../../../database/daos/voucher_dao.dart';
+import '../../../services/notification_service.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({Key? key}) : super(key: key);
@@ -25,6 +27,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> with SingleTickerProvid
   static const double _cardRadius = 16;
   static const double _sectionSpacing = 20;
 
+  final VoucherDao _voucherDao = VoucherDao();
+  final NotificationService _notificationService = NotificationService();
   String _selectedPaymentMethod = 'COD';
   Map<String, dynamic>? _selectedVoucher;
   bool _isAutoFreeshipApplied = false;
@@ -44,6 +48,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> with SingleTickerProvid
       duration: const Duration(milliseconds: 1200),
     )..repeat();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _notificationService.initialize();
       _calculateInitialTotals();
     });
   }
@@ -635,6 +640,24 @@ class _CheckoutScreenState extends State<CheckoutScreen> with SingleTickerProvid
       return;
     }
 
+    // Kiểm tra voucher usage limit trước khi đặt hàng
+    if (_selectedVoucher != null) {
+      final voucherId = _selectedVoucher!['id'] as String?;
+      if (voucherId != null) {
+        final remaining = await _voucherDao.getRemainingUsage(voucherId);
+        if (remaining <= 0) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Voucher đã hết lượt sử dụng!'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+          return;
+        }
+      }
+    }
+
     final stockValid = await _validateStockBeforeCheckout();
     if (!stockValid) return;
 
@@ -664,6 +687,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> with SingleTickerProvid
     setState(() => _isSubmitting = false);
 
     if (success) {
+      // Trừ usage limit của voucher sau khi đặt hàng thành công
+      if (_selectedVoucher != null) {
+        final voucherId = _selectedVoucher!['id'] as String?;
+        if (voucherId != null) {
+          await _voucherDao.decrementUsageLimit(voucherId);
+        }
+      }
+
+      // Đẩy thông báo thành công
+      await _notificationService.showOrderSuccess(
+        title: 'Đặt hàng thành công! 🎉',
+        body: 'Cảm ơn bạn đã mua sắm. Đơn hàng sen đá của bạn đang chờ xử lý.',
+      );
+
       await cartProvider.loadCart(userId);
       await orderProvider.loadMyOrders(userId);
 

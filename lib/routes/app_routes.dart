@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../screens/customer/profile/profile/my_reviews_screen.dart';
 import '../screens/customer/profile/settings_screen.dart';
+import '../screens/customer/support/support_screen.dart';
+import '../screens/customer/legal/legal_screen.dart';
 import '../utils/constants/route_names.dart';
 
 // Auth
@@ -112,6 +114,10 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const SettingsScreen());
       case RouteNames.myReviews:
         return MaterialPageRoute(builder: (_) => const MyReviewsScreen());
+      case RouteNames.support:
+        return MaterialPageRoute(builder: (_) => const SupportScreen());
+      case RouteNames.legal:
+        return MaterialPageRoute(builder: (_) => const LegalScreen());
     // --- DEFAULT ---
       default:
         return MaterialPageRoute(

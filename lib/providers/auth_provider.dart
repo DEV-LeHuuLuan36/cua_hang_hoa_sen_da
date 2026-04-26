@@ -4,9 +4,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user/user.dart';
 import '../models/user/customer.dart';
 import '../database/repositories/auth_repository.dart';
+import '../database/daos/user_dao.dart';
 
 class AuthProvider extends ChangeNotifier {
   final AuthRepository _authRepository;
+  final UserDao _userDao = UserDao();
   User? _currentUser;
   bool _isLoading = false;
   String? _errorMessage;
@@ -37,7 +39,7 @@ class AuthProvider extends ChangeNotifier {
     if (user != null) {
       _currentUser = user;
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('userId', user.id); // Lưu lại ID
+      await prefs.setString('userId', user.id);
       _isLoading = false;
       notifyListeners();
       return true;
@@ -72,5 +74,52 @@ class AuthProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('userId');
     notifyListeners();
+  }
+
+  // Cập nhật avatar
+  Future<bool> updateAvatar(String avatarUrl) async {
+    if (_currentUser == null) return false;
+
+    // Đổi thành int vì UserDao trả về số dòng bị ảnh hưởng
+    final int rowsAffected = await _userDao.updateAvatar(_currentUser!.id, avatarUrl);
+    final bool success = rowsAffected > 0; // Nếu lớn hơn 0 nghĩa là cập nhật thành công
+
+    if (success) {
+      _currentUser = await _authRepository.getUserProfile(_currentUser!.id);
+      notifyListeners();
+    }
+    return success;
+  }
+
+  // Cập nhật thông tin profile
+  Future<bool> updateProfile(String fullName, String phone) async {
+    if (_currentUser == null) return false;
+
+    final int rowsAffected = await _userDao.updateUserProfile(_currentUser!.id, fullName, phone);
+    final bool success = rowsAffected > 0;
+
+    if (success) {
+      _currentUser = await _authRepository.getUserProfile(_currentUser!.id);
+      notifyListeners();
+    }
+    return success;
+  }
+
+  // Xác thực mật khẩu cũ
+  Future<bool> verifyOldPassword(String oldPassword) async {
+    if (_currentUser == null) return false;
+    return await _userDao.verifyPassword(_currentUser!.id, oldPassword);
+  }
+
+  // Đổi mật khẩu
+  Future<bool> changePassword(String newPassword) async {
+    if (_currentUser == null) return false;
+    
+    final bool success = await _userDao.updatePassword(_currentUser!.id, newPassword);
+    if (success) {
+      _currentUser = await _authRepository.getUserProfile(_currentUser!.id);
+      notifyListeners();
+    }
+    return success;
   }
 }

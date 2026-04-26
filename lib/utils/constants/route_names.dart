@@ -28,4 +28,8 @@ class RouteNames {
   static const String adminAddEditProduct = '/admin-add-edit-product';
   static const String adminOrderList = '/admin-order-list';
   static const String adminReport = '/admin-report';
+
+  // Static Pages
+  static const String support = '/support';
+  static const String legal = '/legal';
 }

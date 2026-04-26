@@ -70,7 +70,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     required Color iconColor,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
@@ -95,12 +95,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             child: Icon(icon, color: iconColor),
           ),
           const SizedBox(height: 12),
-          Text(
-            value,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           const SizedBox(height: 4),
@@ -197,7 +201,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 crossAxisCount: 3,
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
-                childAspectRatio: 0.9,
+                childAspectRatio: 0.72,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 children: const [
@@ -211,7 +215,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 crossAxisCount: 3,
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
-                childAspectRatio: 0.9,
+                childAspectRatio: 0.72,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 children: [

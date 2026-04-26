@@ -70,4 +70,59 @@ class UserDao {
       whereArgs: [user.id],
     );
   }
+
+  // 5. Cập nhật avatar URL
+  Future<int> updateAvatar(String userId, String avatarUrl) async {
+    final db = await _dbHelper.database;
+    return await db.update(
+      UserContract.tableName,
+      {
+        UserContract.colAvatar: avatarUrl,
+        UserContract.colUpdatedAt: DateTime.now().millisecondsSinceEpoch,
+      },
+      where: '${UserContract.colId} = ?',
+      whereArgs: [userId],
+    );
+  }
+
+  // 6. Cập nhật thông tin cá nhân (tên, sdt)
+  Future<int> updateUserProfile(String userId, String fullName, String phone) async {
+    final db = await _dbHelper.database;
+    return await db.update(
+      UserContract.tableName,
+      {
+        UserContract.colFullName: fullName,
+        UserContract.colPhone: phone,
+        UserContract.colUpdatedAt: DateTime.now().millisecondsSinceEpoch,
+      },
+      where: '${UserContract.colId} = ?',
+      whereArgs: [userId],
+    );
+  }
+
+  // 7. Cập nhật mật khẩu
+  Future<bool> updatePassword(String userId, String newPassword) async {
+    final db = await _dbHelper.database;
+    final updatedRows = await db.update(
+      UserContract.tableName,
+      {
+        UserContract.colPassword: newPassword,
+        UserContract.colUpdatedAt: DateTime.now().millisecondsSinceEpoch,
+      },
+      where: '${UserContract.colId} = ?',
+      whereArgs: [userId],
+    );
+    return updatedRows > 0;
+  }
+
+  // 8. Kiểm tra mật khẩu cũ
+  Future<bool> verifyPassword(String userId, String password) async {
+    final db = await _dbHelper.database;
+    final result = await db.query(
+      UserContract.tableName,
+      where: '${UserContract.colId} = ? AND ${UserContract.colPassword} = ?',
+      whereArgs: [userId, password],
+    );
+    return result.isNotEmpty;
+  }
 }

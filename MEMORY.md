@@ -1,6 +1,25 @@
 # Project Memory: Cửa Hàng Hoa Sen Đá
 
 ## 🧠 Kiến thức đã học
+
+### [26/04/2026] Gói Tính Năng 1 - Checkout Flow & Static Pages
+- **DatabaseHelper**: Nâng `_databaseVersion` lên 2, thêm `onUpgrade` callback để cập nhật ảnh sản phẩm từ Unsplash.
+- **Seed Data**: 6 sản phẩm (Sen đá Kim Cương, Nâu, Hoa Hồng, Xương rồng Tai Thỏ, Móng Rồng, Chậu Mix) với ảnh real từ Unsplash.
+- **VoucherDao**: Tạo mới với các method `getRemainingUsage()`, `decrementUsageLimit()`, `isVoucherValid()`.
+- **Checkout Logic**: Kiểm tra usage_limit trước khi đặt hàng, trừ voucher sau khi đặt thành công.
+- **CartScreen**: Sửa lỗi nút Back với `Navigator.canPop()` check.
+- **Static Pages**: Tạo `support_screen.dart` và `legal_screen.dart` với UI chuẩn.
+
+### [26/04/2026] Gói Tính Năng 2 - Cá nhân hóa & Thông báo
+- **image_picker**: Thêm vào pubspec.yaml để chọn ảnh avatar từ gallery.
+- **flutter_local_notifications**: Thêm vào pubspec.yaml cho thông báo đẩy.
+- **Profile Avatar**: Cập nhật với icon Camera góc dưới, sử dụng `FileImage` để hiển thị ảnh local.
+- **UserDao**: Thêm các method `updateAvatar()`, `updateUserProfile()`, `updatePassword()`, `verifyPassword()`.
+- **AuthProvider**: Thêm các method `updateAvatar()`, `updateProfile()`, `verifyOldPassword()`, `changePassword()`.
+- **SettingsScreen**: Hoàn thiện với Dialog chỉnh sửa profile (tên, sđt) và Dialog đổi mật khẩu (old → new → confirm).
+- **NotificationService**: Tạo Singleton class wrapper cho `flutter_local_notifications`, method `showOrderSuccess()`.
+- **Checkout Integration**: Gọi `NotificationService.showOrderSuccess()` sau khi đặt hàng thành công.
+
 ### [23/05/2026] Lỗi khởi tạo Database trên Android 14
 - **Vấn đề**: Database bị khóa khi khởi tạo đồng thời từ nhiều Provider.
 - **Giải pháp**: Sử dụng Singleton pattern và `Lock` trong `DatabaseHelper.dart`.

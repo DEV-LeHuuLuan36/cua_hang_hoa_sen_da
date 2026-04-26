@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../theme/app_colors.dart';
 import '../../../utils/constants/route_names.dart';
 import '../../../providers/order_provider.dart';
@@ -7,8 +9,57 @@ import '../../../providers/auth_provider.dart';
 import '../../../models/user/customer.dart';
 import '../../../models/enums/membership_level.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  final ImagePicker _imagePicker = ImagePicker();
+  bool _isUpdatingAvatar = false;
+
+  Future<void> _pickAvatar() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 500,
+        maxHeight: 500,
+        imageQuality: 80,
+      );
+
+      if (image != null && mounted) {
+        setState(() => _isUpdatingAvatar = true);
+        
+        final authProvider = context.read<AuthProvider>();
+        final success = await authProvider.updateAvatar(image.path);
+        
+        if (mounted) {
+          setState(() => _isUpdatingAvatar = false);
+          
+          if (success) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Cập nhật ảnh đại diện thành công!'),
+                backgroundColor: AppColors.success,
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isUpdatingAvatar = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,10 +77,9 @@ class ProfileScreen extends StatelessWidget {
 
     // 3. Xử lý logic hiển thị thông tin thực tế
     String displayName = user?.fullName ?? 'Khách hàng';
-    String displayLevel = 'Thành viên Đồng'; // Mặc định là Đồng
+    String displayLevel = 'Thành viên Đồng';
     Color levelColor = Colors.brown.shade600;
 
-    // SỬ DỤNG ĐÚNG THUỘC TÍNH membershipLevel TỪ FILE BẠN CUNG CẤP
     if (user != null) {
       switch (user.membershipLevel) {
         case MembershipLevel.BRONZE:
@@ -76,10 +126,73 @@ class ProfileScreen extends StatelessWidget {
               padding: const EdgeInsets.all(20.0),
               child: Row(
                 children: [
-                  const CircleAvatar(
-                    radius: 40,
-                    backgroundColor: AppColors.primaryLight,
-                    child: Icon(Icons.person, size: 40, color: Colors.white),
+                  // Avatar với icon camera
+                  GestureDetector(
+                    onTap: _isUpdatingAvatar ? null : _pickAvatar,
+                    child: Stack(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primary.withValues(alpha: 0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: CircleAvatar(
+                            radius: 40,
+                            backgroundColor: AppColors.primaryLight,
+                            backgroundImage: user?.avatar != null && user!.avatar!.isNotEmpty
+                                ? FileImage(File(user!.avatar!))
+                                : null,
+                            child: user?.avatar == null || user!.avatar!.isEmpty
+                                ? const Icon(Icons.person, size: 40, color: Colors.white)
+                                : null,
+                          ),
+                        ),
+                        if (_isUpdatingAvatar)
+                          Positioned.fill(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.4),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Center(
+                                child: SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          )
+                        else
+                          Positioned(
+                            right: 0,
+                            bottom: 0,
+                            child: Container(
+                              width: 28,
+                              height: 28,
+                              decoration: BoxDecoration(
+                                color: AppColors.primary,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 2),
+                              ),
+                              child: const Icon(
+                                Icons.camera_alt,
+                                size: 14,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -87,12 +200,12 @@ class ProfileScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          displayName, // Hiển thị tên thực tế (ví dụ: Lê Hữu Luân)
+                          displayName,
                           style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          displayLevel, // Hiển thị cấp độ thành viên tương ứng
+                          displayLevel,
                           style: TextStyle(color: levelColor, fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -158,7 +271,7 @@ class ProfileScreen extends StatelessWidget {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   onPressed: () {
-                    authProvider.logout();
+                    context.read<AuthProvider>().logout();
                     Navigator.pushReplacementNamed(context, RouteNames.login);
                   },
                   child: const Text('ĐĂNG XUẤT', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
