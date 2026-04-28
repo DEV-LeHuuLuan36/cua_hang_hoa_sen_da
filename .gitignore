@@ -43,3 +43,10 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# AI and Cursor Agent files
+.cursor/
+.cursorrules
+MEMORY.md
+Information.txt
+agent.md
