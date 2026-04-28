@@ -1,8 +1,0 @@
----
-description: Áp dụng Clean Architecture cho dự án Sen Đá
-globs: lib/**/*.dart
----
-# Architecture
-- Chia folder theo: `layers/data`, `layers/domain`, `layers/presentation`.
-- Logic nghiệp vụ (Business Logic) không được nằm trong Widget.
-- Sử dụng Dependency Injection (Hilt/GetIt) để giảm phụ thuộc.

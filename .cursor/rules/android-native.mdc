@@ -1,9 +1,0 @@
----
-description: Tối ưu hóa cho môi trường Android
-globs: android/**/*
----
-# Android Specifics
-- Khi sửa file Gradle, luôn kiểm tra `minSdkVersion` và `targetSdkVersion`.
-- Đảm bảo các quyền (Permissions) trong `AndroidManifest.xml` tuân thủ nguyên tắc tối giản.
-- Nếu viết code native (Kotlin/Java), sử dụng ViewBinding và tránh Memory Leak.
-- Hỗ trợ tối ưu cho các dòng máy Android phổ biến tại Việt Nam.
