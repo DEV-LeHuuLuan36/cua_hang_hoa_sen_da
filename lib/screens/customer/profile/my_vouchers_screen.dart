@@ -1,82 +1,370 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import '../../../theme/app_colors.dart';
+import '../../../database/daos/voucher_dao.dart';
+import '../../../database/contracts/voucher_contract.dart';
 
-class MyVouchersScreen extends StatelessWidget {
+class MyVouchersScreen extends StatefulWidget {
   const MyVouchersScreen({Key? key}) : super(key: key);
+
+  @override
+  State<MyVouchersScreen> createState() => _MyVouchersScreenState();
+}
+
+class _MyVouchersScreenState extends State<MyVouchersScreen> {
+  final VoucherDao _voucherDao = VoucherDao();
+  List<Map<String, dynamic>> _vouchers = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVouchers();
+  }
+
+  Future<void> _loadVouchers() async {
+    try {
+      final vouchers = await _voucherDao.getAllActiveVouchers();
+      setState(() {
+        _vouchers = vouchers;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Voucher của tôi', style: TextStyle(color: AppColors.textPrimary)),
-        backgroundColor: Colors.white,
+        title: const Text('Kho Voucher'),
+        backgroundColor: AppColors.surface,
         elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        titleTextStyle: const TextStyle(
+          color: AppColors.textPrimary,
+          fontWeight: FontWeight.w700,
+          fontSize: 18,
+        ),
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: 3,
-        itemBuilder: (context, index) {
-          return Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8)],
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _vouchers.isEmpty
+              ? _buildEmptyState()
+              : _buildVoucherList(),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.local_offer_outlined,
+            size: 80,
+            color: Colors.grey[300],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Chưa có voucher nào',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[500],
+              fontWeight: FontWeight.w500,
             ),
-            child: Row(
-              children: [
-                Container(
-                  width: 100, height: 100,
-                  decoration: const BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.horizontal(left: Radius.circular(12)),
-                  ),
-                  child: const Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.confirmation_number, color: Colors.white, size: 32),
-                      SizedBox(height: 8),
-                      Text('GIẢM 30%', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  // ĐÃ SỬA LỖI Ở ĐÂY: Dùng widget Padding thay vì tham số padding
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Mùa hè rực rỡ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                        const SizedBox(height: 4),
-                        const Text('Đơn tối thiểu 150k\nGiảm tối đa 50k', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('HSD: 30/12/2026', style: TextStyle(color: AppColors.error, fontSize: 12)),
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                minimumSize: const Size(60, 30),
-                                padding: const EdgeInsets.symmetric(horizontal: 12),
-                              ),
-                              onPressed: () {},
-                              child: const Text('Dùng', style: TextStyle(color: Colors.white, fontSize: 12)),
-                            )
-                          ],
-                        )
-                      ],
-                    ),
-                  ),
-                )
-              ],
-            ),
-          );
-        },
+          ),
+        ],
       ),
     );
+  }
+
+  Widget _buildVoucherList() {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _vouchers.length,
+      itemBuilder: (context, index) {
+        final voucher = _vouchers[index];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: _buildVoucherCard(voucher),
+        );
+      },
+    );
+  }
+
+  Widget _buildVoucherCard(Map<String, dynamic> voucher) {
+    final voucherType = voucher[VoucherContract.colVoucherType] ?? 'discount';
+    final discountType = voucher[VoucherContract.colDiscountType] ?? '';
+    final discountValue = (voucher[VoucherContract.colDiscountValue] as num?)?.toDouble() ?? 0;
+    final minOrder = (voucher[VoucherContract.colMinOrderValue] as num?)?.toDouble() ?? 0;
+    final code = voucher[VoucherContract.colCode] ?? '';
+    final name = voucher[VoucherContract.colName] ?? '';
+    final description = voucher[VoucherContract.colDescription] ?? '';
+    final quantity = voucher[VoucherContract.colQuantity] as int? ?? 0;
+    final usedCount = voucher[VoucherContract.colUsedCount] as int? ?? 0;
+    final endDate = voucher[VoucherContract.colEndDate] as int?;
+    final isNoExpiry = endDate == null;
+    final isUsageExhausted = usedCount >= quantity;
+    final isExpired = !isNoExpiry && DateTime.now().millisecondsSinceEpoch > endDate;
+    final isDisabled = isUsageExhausted || isExpired;
+
+    // Gradient colors based on voucher type
+    final gradientColors = _getGradientColors(voucherType);
+
+    return Opacity(
+      opacity: isDisabled ? 0.5 : 1.0,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+          border: isDisabled
+              ? Border.all(color: Colors.grey[300]!, width: 1.5)
+              : null,
+        ),
+        child: Row(
+          children: [
+            // Left side - Discount info
+            Container(
+              width: 90,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: gradientColors,
+                ),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(12),
+                  bottomLeft: Radius.circular(12),
+                ),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (voucherType == 'shipping')
+                    const Icon(Icons.local_shipping, color: Colors.white, size: 28)
+                  else
+                    Text(
+                      discountType == 'percent'
+                          ? '${discountValue.toInt()}%'
+                          : '${(discountValue / 1000).toStringAsFixed(0)}K',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  const SizedBox(height: 2),
+                  Text(
+                    voucherType == 'shipping' ? 'SHIP' : 'GIẢM',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Right side - Details
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: voucherType == 'shipping'
+                                ? Colors.blue.withValues(alpha: 0.1)
+                                : Colors.orange.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              code,
+                              style: TextStyle(
+                                color: voucherType == 'shipping' ? Colors.blue : Colors.orange[700],
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ),
+                        if (isUsageExhausted) ...[
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.grey,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text(
+                                'HẾT LƯỢT',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
+                        ],
+                        if (isExpired) ...[
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppColors.error,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text(
+                                'HẾT HẠN',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      description,
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 11,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.calendar_today,
+                          size: 11,
+                          color: isExpired ? AppColors.error : Colors.grey[500],
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          isNoExpiry
+                              ? 'Không thời hạn'
+                              : 'HSD: ${DateFormat('dd/MM/yyyy').format(DateTime.fromMillisecondsSinceEpoch(endDate))}',
+                          style: TextStyle(
+                            color: isExpired ? AppColors.error : Colors.grey[500],
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (minOrder > 0) ...[
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Icon(Icons.shopping_cart, size: 11, color: Colors.grey[500]),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Tối thiểu: ${_formatMoney(minOrder)}',
+                            style: TextStyle(
+                              color: Colors.grey[500],
+                              fontSize: 10,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            // Action button
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: ElevatedButton(
+                onPressed: isDisabled
+                    ? null
+                    : () {
+                        HapticFeedback.lightImpact();
+                        Navigator.pop(context, voucher);
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: voucherType == 'shipping' ? Colors.blue : AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  elevation: 0,
+                  disabledBackgroundColor: Colors.grey[300],
+                  disabledForegroundColor: Colors.grey[500],
+                ),
+                child: const Text(
+                  'Dùng ngay',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Color> _getGradientColors(String type) {
+    switch (type) {
+      case 'shipping':
+        // Màu xanh cho Freeship
+        return [const Color(0xFF3498db), const Color(0xFF2980b9)];
+      case 'discount':
+        // Màu cam/đỏ cho Giảm giá
+        return [const Color(0xFFe67e22), const Color(0xFFd35400)];
+      default:
+        return [AppColors.primary, AppColors.primaryDark];
+    }
+  }
+
+  String _formatMoney(double value) {
+    if (value >= 1000) {
+      return '${(value / 1000).toStringAsFixed(0)}K';
+    }
+    return '${value.toInt()}đ';
   }
 }

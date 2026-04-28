@@ -21,6 +21,7 @@ class RouteNames {
   static const String recentlyViewed = '/recently-viewed';
   static const String settings = '/settings';
   static const String myReviews = '/my-reviews';
+  static const String notifications = '/notifications';
 
   // Admin
   static const String adminDashboard = '/admin-dashboard';
@@ -28,6 +29,7 @@ class RouteNames {
   static const String adminAddEditProduct = '/admin-add-edit-product';
   static const String adminOrderList = '/admin-order-list';
   static const String adminReport = '/admin-report';
+  static const String adminVoucher = '/admin-voucher';
 
   // Static Pages
   static const String support = '/support';

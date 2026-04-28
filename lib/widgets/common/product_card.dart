@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // Thêm thư viện Provider
+import 'package:provider/provider.dart';
 import '../../models/product/succulent.dart';
 import '../../theme/app_colors.dart';
-import '../../providers/favorite_provider.dart'; // Import Provider
-import '../../providers/auth_provider.dart';     // Import Provider
+import '../../providers/favorite_provider.dart';
+import '../../providers/auth_provider.dart';
 import 'pressable_scale.dart';
 
 class ProductCard extends StatelessWidget {
@@ -47,14 +47,35 @@ class ProductCard extends StatelessWidget {
               Expanded(
                 child: Stack(
                   children: [
-                    // 1. Khung nền ảnh sản phẩm
+                    // 1. Ảnh sản phẩm hoặc Placeholder
                     Container(
                       width: double.infinity,
                       decoration: const BoxDecoration(
                         color: AppColors.background,
                         borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
                       ),
-                      child: const Icon(Icons.eco, size: 40, color: AppColors.primaryLight),
+                      child: ClipRRect(
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                        child: product.primaryImage != null && product.primaryImage!.isNotEmpty
+                            ? Image.asset(
+                                product.primaryImage!,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: double.infinity,
+                                errorBuilder: (context, error, stackTrace) => Container(
+                                  color: Colors.grey[300],
+                                  child: const Center(
+                                    child: Icon(Icons.image, size: 40, color: Colors.grey),
+                                  ),
+                                ),
+                              )
+                            : Container(
+                                color: Colors.grey[300],
+                                child: const Center(
+                                  child: Icon(Icons.image, size: 40, color: Colors.grey),
+                                ),
+                              ),
+                      ),
                     ),
 
                     // 2. Nút Thả tim góc phải trên
@@ -76,7 +97,7 @@ class ProductCard extends StatelessWidget {
                         child: Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.9), // Nền trắng mờ để nổi bật icon
+                            color: Colors.white.withValues(alpha: 0.9),
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
@@ -94,6 +115,27 @@ class ProductCard extends StatelessWidget {
                         ),
                       ),
                     ),
+                    // 3. Nhãn HẾT HÀNG
+                    if (product.stock <= 0)
+                      Positioned(
+                        top: 8,
+                        left: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.grey,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text(
+                            'HẾT HÀNG',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),

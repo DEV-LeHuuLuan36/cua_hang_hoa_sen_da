@@ -1,4 +1,6 @@
 import 'package:sqflite/sqflite.dart';
+import 'package:crypto/crypto.dart';
+import 'dart:convert';
 import '../database_helper.dart';
 import '../contracts/user_contract.dart';
 import '../../models/user/user.dart';
@@ -103,10 +105,12 @@ class UserDao {
   // 7. Cập nhật mật khẩu
   Future<bool> updatePassword(String userId, String newPassword) async {
     final db = await _dbHelper.database;
+    // BẮT BUỘC hash password trước khi lưu
+    final hashedPassword = sha256.convert(utf8.encode(newPassword)).toString();
     final updatedRows = await db.update(
       UserContract.tableName,
       {
-        UserContract.colPassword: newPassword,
+        UserContract.colPassword: hashedPassword,
         UserContract.colUpdatedAt: DateTime.now().millisecondsSinceEpoch,
       },
       where: '${UserContract.colId} = ?',
@@ -120,9 +124,53 @@ class UserDao {
     final db = await _dbHelper.database;
     final result = await db.query(
       UserContract.tableName,
-      where: '${UserContract.colId} = ? AND ${UserContract.colPassword} = ?',
-      whereArgs: [userId, password],
+      columns: [UserContract.colPassword],
+      where: '${UserContract.colId} = ?',
+      whereArgs: [userId],
     );
-    return result.isNotEmpty;
+
+    if (result.isEmpty) {
+      print('UserDao verifyPassword: User not found for id: $userId');
+      return false;
+    }
+
+    final dbPassword = result.first[UserContract.colPassword] as String?;
+    final hashedPassword = sha256.convert(utf8.encode(password)).toString();
+    print('UserDao verifyPassword: Input: "$password" | Hashed: "$hashedPassword" | DB: "$dbPassword"');
+
+    return dbPassword == hashedPassword;
+  }
+
+  // 9. Đếm khách hàng mới theo khoảng thời gian
+  Future<int> countNewCustomers(DateTime? startDate, DateTime? endDate) async {
+    final db = await _dbHelper.database;
+    String whereClause = '${UserContract.colRole} = ?';
+    List<dynamic> whereArgs = [UserRole.CUSTOMER.name];
+
+    if (startDate != null) {
+      whereClause += ' AND ${UserContract.colCreatedAt} >= ?';
+      whereArgs.add(startDate.millisecondsSinceEpoch);
+    }
+    if (endDate != null) {
+      whereClause += ' AND ${UserContract.colCreatedAt} <= ?';
+      whereArgs.add(endDate.millisecondsSinceEpoch);
+    }
+
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM ${UserContract.tableName} WHERE $whereClause',
+      whereArgs,
+    );
+    return (result.first['count'] as int?) ?? 0;
+  }
+
+  // 10. Xóa tài khoản
+  Future<bool> deleteAccount(String userId) async {
+    final db = await _dbHelper.database;
+    final deletedRows = await db.delete(
+      UserContract.tableName,
+      where: '${UserContract.colId} = ?',
+      whereArgs: [userId],
+    );
+    return deletedRows > 0;
   }
 }

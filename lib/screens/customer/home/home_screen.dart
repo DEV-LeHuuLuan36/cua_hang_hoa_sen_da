@@ -114,10 +114,41 @@ class _HomeContentState extends State<HomeContent> {
                     Text(displayName, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.primaryDark)),
                   ],
                 ),
-                Container(
-                  decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)]),
-                  child: IconButton(icon: const Icon(Icons.notifications_outlined, color: AppColors.primaryDark), onPressed: () {}),
-                )
+                Row(
+                  children: [
+                    // Nút Voucher
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pushNamed(context, RouteNames.myVouchers);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)],
+                        ),
+                        child: const Icon(Icons.local_offer_outlined, color: AppColors.primaryDark),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Nút Notifications
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pushNamed(context, RouteNames.notifications);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)],
+                        ),
+                        child: const Icon(Icons.notifications_outlined, color: AppColors.primaryDark),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
             const SizedBox(height: 24),

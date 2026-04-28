@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import '../../../providers/product_provider.dart';
 import '../../../providers/cart_provider.dart';
 import '../../../models/cart/cart_item.dart';
@@ -50,18 +49,35 @@ class ProductDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Ảnh sản phẩm (Tạm dùng khối màu xanh lá)
+            // 1. Ảnh sản phẩm (chất lượng cao)
             Container(
               width: double.infinity,
               height: 350,
               decoration: BoxDecoration(
-                color: AppColors.primaryLight.withOpacity(0.2),
+                color: Colors.grey[200],
                 borderRadius: const BorderRadius.vertical(bottom: Radius.circular(30)),
               ),
-              child: const SafeArea(
-                child: Center(
-                  child: Icon(Icons.eco, size: 120, color: AppColors.primary),
-                ),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(30)),
+                child: product.primaryImage != null && product.primaryImage!.isNotEmpty
+                    ? Image.asset(
+                        product.primaryImage!,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: double.infinity,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          color: Colors.grey[200],
+                          child: const Center(
+                            child: Icon(Icons.image, size: 80, color: Colors.grey),
+                          ),
+                        ),
+                      )
+                    : Container(
+                        color: Colors.grey[200],
+                        child: const Center(
+                          child: Icon(Icons.image, size: 80, color: Colors.grey),
+                        ),
+                      ),
               ),
             ),
 
@@ -89,11 +105,31 @@ class ProductDetailScreen extends StatelessWidget {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      const Icon(Icons.star, color: AppColors.accent, size: 20),
-                      const SizedBox(width: 4),
-                      Text('${product.rating} (${product.reviewCount} đánh giá)', style: const TextStyle(color: AppColors.textSecondary)),
+                      if (product.reviewCount > 0) ...[
+                        const Icon(Icons.star, color: AppColors.accent, size: 20),
+                        const SizedBox(width: 4),
+                        Text('${product.rating.toStringAsFixed(1)} (${product.reviewCount} đánh giá)', style: const TextStyle(color: AppColors.textSecondary)),
+                      ] else ...[
+                        const Icon(Icons.star_border, color: AppColors.textSecondary, size: 20),
+                        const SizedBox(width: 4),
+                        const Text('Chưa có đánh giá nào', style: TextStyle(color: AppColors.textSecondary)),
+                      ],
                       const Spacer(),
-                      Text('Kho: ${product.stock}', style: const TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.bold)),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: product.stock > 0 ? AppColors.success.withOpacity(0.1) : Colors.grey[200],
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          product.stock > 0 ? 'Còn ${product.stock}' : 'HẾT HÀNG',
+                          style: TextStyle(
+                            color: product.stock > 0 ? AppColors.success : Colors.grey,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 24),
@@ -115,6 +151,15 @@ class ProductDetailScreen extends StatelessWidget {
                     _buildCareItem(Icons.water_drop_outlined, 'Lượng nước', product.careInstruction!.waterRequirement),
                     _buildCareItem(Icons.thermostat_outlined, 'Độ khó', product.careInstruction!.careLevel),
                   ],
+                  const SizedBox(height: 24),
+
+                  // 5. Thông số kỹ thuật
+                  const Text('Thông số kỹ thuật', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  if (product.size != null) _buildCareItem(Icons.straighten, 'Kích thước', product.size!),
+                  if (product.color != null) _buildCareItem(Icons.palette, 'Màu sắc', product.color!),
+                  if (product.origin != null) _buildCareItem(Icons.public, 'Xuất xứ', product.origin!),
+                  if (product.sku != null) _buildCareItem(Icons.qr_code, 'Mã SKU', product.sku!),
                 ],
               ),
             ),
@@ -148,11 +193,11 @@ class ProductDetailScreen extends StatelessWidget {
               Expanded(
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
+                    backgroundColor: product.stock > 0 ? AppColors.primary : Colors.grey,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  onPressed: () async {
+                  onPressed: product.stock > 0 ? () async {
                     // Logic Thêm vào giỏ hàng
                     final user = context.read<AuthProvider>().currentUser;
                     if (user == null) return;
@@ -176,8 +221,11 @@ class ProductDetailScreen extends StatelessWidget {
                     if (success && context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã thêm vào giỏ hàng!'), backgroundColor: AppColors.success));
                     }
-                  },
-                  child: const Text('THÊM VÀO GIỎ HÀNG', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                  } : null,
+                  child: Text(
+                    product.stock > 0 ? 'THÊM VÀO GIỎ HÀNG' : 'HẾT HÀNG',
+                    style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
             ],

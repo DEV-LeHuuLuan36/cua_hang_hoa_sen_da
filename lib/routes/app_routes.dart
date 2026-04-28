@@ -3,6 +3,7 @@ import '../screens/customer/profile/profile/my_reviews_screen.dart';
 import '../screens/customer/profile/settings_screen.dart';
 import '../screens/customer/support/support_screen.dart';
 import '../screens/customer/legal/legal_screen.dart';
+import '../screens/customer/notification/notification_screen.dart';
 import '../utils/constants/route_names.dart';
 
 // Auth
@@ -31,6 +32,7 @@ import '../screens/admin/admin_product_screen.dart';
 import '../screens/admin/admin_add_edit_product.dart';
 import '../screens/admin/admin_order_screen.dart';
 import '../screens/admin/admin_report_screen.dart';
+import '../screens/admin/admin_voucher_screen.dart';
 
 class AppRoutes {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -104,6 +106,9 @@ class AppRoutes {
       case RouteNames.adminReport:
         return MaterialPageRoute(builder: (_) => const AdminReportScreen());
 
+      case RouteNames.adminVoucher:
+        return MaterialPageRoute(builder: (_) => const AdminVoucherScreen());
+
       case '${RouteNames.addressBook}/add':
         return MaterialPageRoute(builder: (_) => const AddEditAddressScreen());
       case '${RouteNames.addressBook}/edit':
@@ -114,6 +119,8 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const SettingsScreen());
       case RouteNames.myReviews:
         return MaterialPageRoute(builder: (_) => const MyReviewsScreen());
+      case RouteNames.notifications:
+        return MaterialPageRoute(builder: (_) => const NotificationScreen());
       case RouteNames.support:
         return MaterialPageRoute(builder: (_) => const SupportScreen());
       case RouteNames.legal:

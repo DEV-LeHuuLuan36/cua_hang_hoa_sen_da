@@ -114,11 +114,22 @@ class AuthProvider extends ChangeNotifier {
   // Đổi mật khẩu
   Future<bool> changePassword(String newPassword) async {
     if (_currentUser == null) return false;
-    
+
     final bool success = await _userDao.updatePassword(_currentUser!.id, newPassword);
     if (success) {
       _currentUser = await _authRepository.getUserProfile(_currentUser!.id);
       notifyListeners();
+    }
+    return success;
+  }
+
+  // Xóa tài khoản
+  Future<bool> deleteAccount() async {
+    if (_currentUser == null) return false;
+
+    final bool success = await _userDao.deleteAccount(_currentUser!.id);
+    if (success) {
+      logout();
     }
     return success;
   }

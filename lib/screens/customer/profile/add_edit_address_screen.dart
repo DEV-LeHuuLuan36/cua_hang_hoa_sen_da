@@ -11,6 +11,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../../providers/user_provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../theme/app_colors.dart';
+import '../../../models/common/address.dart';
 import '../../../models/enums/address_type.dart';
 
 class AddEditAddressScreen extends StatefulWidget {
@@ -287,7 +288,22 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
               if (context.mounted) {
                 if (success) {
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lưu thành công!'), backgroundColor: AppColors.success));
-                  Navigator.pop(context);
+                  // Tạo Address object để trả về cho màn hình Checkout
+                  final newAddress = Address(
+                    id: 'addr_${DateTime.now().millisecondsSinceEpoch}',
+                    userId: userId,
+                    fullName: _fullNameController.text.trim(),
+                    phone: _phoneController.text.trim(),
+                    city: _selectedProvince ?? '',
+                    district: _selectedDistrict ?? '',
+                    ward: _selectedWard ?? '',
+                    addressLine: _addressLineController.text.trim(),
+                    addressType: _selectedType,
+                    isDefault: _isDefault,
+                    createdAt: DateTime.now().millisecondsSinceEpoch,
+                    updatedAt: DateTime.now().millisecondsSinceEpoch,
+                  );
+                  Navigator.pop(context, newAddress);
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lỗi hệ thống!'), backgroundColor: Colors.red));
                 }

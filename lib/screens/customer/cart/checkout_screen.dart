@@ -14,6 +14,7 @@ import '../../../models/cart/cart_item.dart';
 import '../../../models/product/succulent.dart';
 import '../../../widgets/common/pressable_scale.dart';
 import '../../../database/daos/voucher_dao.dart';
+import '../../../database/contracts/voucher_contract.dart';
 import '../../../services/notification_service.dart';
 
 class CheckoutScreen extends StatefulWidget {
@@ -26,16 +27,26 @@ class CheckoutScreen extends StatefulWidget {
 class _CheckoutScreenState extends State<CheckoutScreen> with SingleTickerProviderStateMixin {
   static const double _cardRadius = 16;
   static const double _sectionSpacing = 20;
+  static const double _shippingFeeDefault = 30000;
 
   final VoucherDao _voucherDao = VoucherDao();
   final NotificationService _notificationService = NotificationService();
+  final TextEditingController _voucherController = TextEditingController();
+  
+  // Tab index cho Bottom Sheet voucher
+  int _voucherBottomSheetTab = 0;
+  
   String _selectedPaymentMethod = 'COD';
-  Map<String, dynamic>? _selectedVoucher;
+  Map<String, dynamic>? _appliedDiscountVoucher;
+  Map<String, dynamic>? _appliedShippingVoucher;
   bool _isAutoFreeshipApplied = false;
   bool _isSubmitting = false;
   bool _isInitialLoading = true;
-  double _shippingFee = 30000;
+  bool _isApplyingVoucher = false;
+  String? _voucherError;
+  double _shippingFee = _shippingFeeDefault;
   double _discountAmount = 0;
+  double _shippingDiscountAmount = 0;
   double _subTotal = 0;
   Address? _selectedAddress;
   late final AnimationController _shimmerController;
@@ -47,16 +58,165 @@ class _CheckoutScreenState extends State<CheckoutScreen> with SingleTickerProvid
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     )..repeat();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _notificationService.initialize();
-      _calculateInitialTotals();
-    });
+    _notificationService.initialize();
+    _calculateInitialTotals();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final userProvider = context.read<UserProvider>();
+    final authProvider = context.read<AuthProvider>();
+    final userId = authProvider.currentUser?.id;
+    if (userId != null && userProvider.addresses.isEmpty) {
+      userProvider.loadUserAddresses(userId);
+    }
+  }
+
+  Future<void> _reloadAddresses() async {
+    final userProvider = context.read<UserProvider>();
+    final authProvider = context.read<AuthProvider>();
+    final userId = authProvider.currentUser?.id;
+    if (userId != null) {
+      await userProvider.loadUserAddresses(userId);
+      if (userProvider.addresses.isNotEmpty && _selectedAddress == null) {
+        setState(() {
+          _selectedAddress = userProvider.addresses.firstWhere(
+            (addr) => addr.isDefault,
+            orElse: () => userProvider.addresses.first,
+          );
+        });
+      }
+    }
   }
 
   @override
   void dispose() {
     _shimmerController.dispose();
+    _voucherController.dispose();
     super.dispose();
+  }
+
+  /// Áp dụng voucher - kiểm tra ngay lập tức
+  Future<void> _applyVoucherByCode(String code) async {
+    if (code.trim().isEmpty) {
+      setState(() {
+        _voucherError = 'Vui lòng nhập mã giảm giá';
+      });
+      return;
+    }
+
+    setState(() {
+      _isApplyingVoucher = true;
+      _voucherError = null;
+    });
+
+    try {
+      // Validate voucher ngay lập tức
+      final result = await _voucherDao.validateVoucher(
+        code: code.trim(),
+        totalAmount: _subTotal,
+      );
+
+      if (!result.isValid) {
+        setState(() {
+          _voucherError = result.errorMessage ?? 'Mã giảm giá không hợp lệ';
+          _isApplyingVoucher = false;
+        });
+        return;
+      }
+
+      final voucher = result.voucher!;
+      final voucherType = voucher[VoucherContract.colVoucherType] ?? 'discount';
+
+      HapticFeedback.lightImpact();
+
+      // Áp dụng voucher theo loại
+      if (voucherType == 'shipping') {
+        setState(() {
+          _appliedShippingVoucher = voucher;
+          _shippingDiscountAmount = _shippingFee;
+          _shippingFee = 0;
+          _isAutoFreeshipApplied = false;
+          _isApplyingVoucher = false;
+        });
+        _voucherController.clear();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Áp dụng mã ${voucher[VoucherContract.colCode]} - Freeship!'),
+              backgroundColor: Colors.blue,
+            ),
+          );
+        }
+      } else {
+        _applyDiscountVoucher(voucher);
+        _voucherController.clear();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Áp dụng mã ${voucher[VoucherContract.colCode]} - Giảm giá!'),
+              backgroundColor: AppColors.success,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      setState(() {
+        _voucherError = 'Đã xảy ra lỗi. Vui lòng thử lại.';
+        _isApplyingVoucher = false;
+      });
+    }
+  }
+
+  void _applyDiscountVoucher(Map<String, dynamic>? voucher) {
+    final today = DateTime.now();
+    setState(() {
+      _appliedDiscountVoucher = voucher;
+      _discountAmount = 0;
+
+      if (voucher == null) {
+        return;
+      }
+
+      final String type = voucher[VoucherContract.colDiscountType] ?? '';
+      final double value = (voucher[VoucherContract.colDiscountValue] as num?)?.toDouble() ?? 0;
+      final double? maxDiscount = (voucher[VoucherContract.colMaxDiscount] as num?)?.toDouble();
+
+      switch (type) {
+        case 'percent':
+          final calculated = (_subTotal * value / 100);
+          _discountAmount = (maxDiscount != null && calculated > maxDiscount) ? maxDiscount : calculated;
+          break;
+        case 'fixed':
+          _discountAmount = value > _subTotal ? _subTotal : value;
+          break;
+        default:
+          _discountAmount = 0;
+      }
+    });
+  }
+
+  void _applyShippingVoucher(Map<String, dynamic>? voucher) {
+    setState(() {
+      _appliedShippingVoucher = voucher;
+      if (voucher != null) {
+        _shippingDiscountAmount = _shippingFee;
+        _shippingFee = 0;
+        _isAutoFreeshipApplied = false;
+      } else {
+        _shippingFee = _shippingFeeDefault;
+        _shippingDiscountAmount = 0;
+      }
+    });
+  }
+
+  void _removeDiscountVoucher() {
+    _applyDiscountVoucher(null);
+  }
+
+  void _removeShippingVoucher() {
+    _applyShippingVoucher(null);
   }
 
   Future<void> _calculateInitialTotals() async {
@@ -67,7 +227,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> with SingleTickerProvid
 
     final userId = authProvider.currentUser?.id;
 
-    // Load sổ địa chỉ của user nếu có
     if (userId != null) {
       await userProvider.loadUserAddresses(userId);
       if (userProvider.addresses.isNotEmpty) {
@@ -106,53 +265,49 @@ class _CheckoutScreenState extends State<CheckoutScreen> with SingleTickerProvid
     setState(() {
       if (today.day == today.month) {
         _isAutoFreeshipApplied = true;
+        _shippingDiscountAmount = _shippingFeeDefault;
         _shippingFee = 0;
       } else {
         _isAutoFreeshipApplied = false;
-        _shippingFee = 30000;
       }
     });
   }
 
-  void _applyVoucher(Map<String, dynamic>? voucher) {
-    final today = DateTime.now();
-    setState(() {
-      _selectedVoucher = voucher;
-      _discountAmount = 0;
-      _shippingFee = 30000;
-
-      if (voucher == null) {
-        if (today.day == today.month) {
-          _isAutoFreeshipApplied = true;
-          _shippingFee = 0;
-        } else {
-          _isAutoFreeshipApplied = false;
-        }
-        return;
-      }
-
-      _isAutoFreeshipApplied = false;
-
-      final String type = voucher['type'] ?? '';
-      final double value = (voucher['value'] as num?)?.toDouble() ?? 0;
-      final double? maxDiscount = (voucher['maxDiscount'] as num?)?.toDouble();
-
-      switch (type) {
-        case 'freeship':
-          _shippingFee = 0;
-          _discountAmount = 0;
-          break;
-        case 'percent':
-          final calculated = (_subTotal * value / 100);
-          _discountAmount = (maxDiscount != null && calculated > maxDiscount) ? maxDiscount : calculated;
-          break;
-        case 'fixed':
-          _discountAmount = value;
-          break;
-        default:
-          _discountAmount = 0;
-      }
-    });
+  void _showVoucherBottomSheet(BuildContext context) {
+    _voucherBottomSheetTab = 0;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => _VoucherBottomSheet(
+        subTotal: _subTotal,
+        appliedDiscountVoucher: _appliedDiscountVoucher,
+        appliedShippingVoucher: _appliedShippingVoucher,
+        onDiscountVoucherSelected: (voucher) {
+          HapticFeedback.lightImpact();
+          _applyDiscountVoucher(voucher);
+          setState(() {}); // Cập nhật màn hình cha
+        },
+        onShippingVoucherSelected: (voucher) {
+          HapticFeedback.lightImpact();
+          _applyShippingVoucher(voucher);
+          setState(() {}); // Cập nhật màn hình cha
+        },
+        onDiscountVoucherRemoved: () {
+          _removeDiscountVoucher();
+          setState(() {}); // Cập nhật màn hình cha
+        },
+        onShippingVoucherRemoved: () {
+          _removeShippingVoucher();
+          setState(() {}); // Cập nhật màn hình cha
+        },
+        onTabChanged: (tab) {
+          setState(() {
+            _voucherBottomSheetTab = tab;
+          });
+        },
+      ),
+    );
   }
 
   Future<bool> _validateStockBeforeCheckout() async {
@@ -226,9 +381,21 @@ class _CheckoutScreenState extends State<CheckoutScreen> with SingleTickerProvid
   Widget _buildAddressSection(BuildContext context) {
     return InkWell(
       onTap: () async {
+        final userProvider = context.read<UserProvider>();
+        await _reloadAddresses();
         final selected = await Navigator.pushNamed(context, RouteNames.addressBook);
         if (selected is Address) {
           setState(() => _selectedAddress = selected);
+        } else {
+          await _reloadAddresses();
+          if (userProvider.addresses.isNotEmpty && _selectedAddress == null) {
+            setState(() {
+              _selectedAddress = userProvider.addresses.firstWhere(
+                (addr) => addr.isDefault,
+                orElse: () => userProvider.addresses.first,
+              );
+            });
+          }
         }
       },
       borderRadius: BorderRadius.circular(_cardRadius),
@@ -299,79 +466,107 @@ class _CheckoutScreenState extends State<CheckoutScreen> with SingleTickerProvid
       decoration: _cardDecoration(),
       child: Column(
         children: [
+          // TextField nhập mã voucher
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  const Icon(Icons.local_offer_rounded, color: AppColors.primary),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Mã giảm giá',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
+              Expanded(
+                child: TextField(
+                  controller: _voucherController,
+                  decoration: InputDecoration(
+                    hintText: 'Nhập mã giảm giá',
+                    hintStyle: TextStyle(color: Colors.grey[400]),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: Colors.grey[300]!),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: Colors.grey[300]!),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+                    ),
+                    errorText: _voucherError,
+                    errorStyle: const TextStyle(fontSize: 12),
+                    isDense: true,
                   ),
-                ],
+                  textCapitalization: TextCapitalization.characters,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  onSubmitted: (value) => _applyVoucherByCode(value),
+                ),
               ),
-              TextButton(
-                onPressed: () async {
-                  final result = await Navigator.pushNamed(context, RouteNames.myVouchers);
-                  if (result is Map<String, dynamic>) {
-                    HapticFeedback.lightImpact();
-                    _applyVoucher(result);
-                  }
-                },
-                child: Text(_selectedVoucher != null ? 'Thay đổi' : 'Chọn mã'),
+              const SizedBox(width: 12),
+              ElevatedButton(
+                onPressed: _isApplyingVoucher
+                    ? null
+                    : () => _applyVoucherByCode(_voucherController.text),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: _isApplyingVoucher
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : const Text(
+                        'ÁP DỤNG',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
               ),
             ],
           ),
-          if (_selectedVoucher != null)
-            Container(
-              margin: const EdgeInsets.only(top: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: AppColors.primaryLight.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.confirmation_number_rounded, color: AppColors.primary),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Đã áp dụng mã: ${_selectedVoucher!['code']}',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppColors.primaryDark,
-                            fontWeight: FontWeight.w600,
-                          ),
-                    ),
-                  ),
-                  InkWell(
-                    onTap: () => _applyVoucher(null),
-                    child: const Icon(Icons.close_rounded, color: AppColors.textSecondary),
-                  ),
-                ],
-              ),
+          // Nút chọn voucher từ danh sách
+          TextButton.icon(
+            onPressed: () => _showVoucherBottomSheet(context),
+            icon: const Icon(Icons.local_offer_rounded, size: 18),
+            label: const Text('Chọn mã giảm giá'),
+          ),
+          
+          // Hiển thị voucher giảm giá đã áp dụng
+          if (_appliedDiscountVoucher != null)
+            _buildAppliedVoucherChip(
+              voucher: _appliedDiscountVoucher!,
+              type: 'discount',
+              onRemove: _removeDiscountVoucher,
             ),
-          if (_isAutoFreeshipApplied)
+          
+          // Hiển thị voucher freeship đã áp dụng
+          if (_appliedShippingVoucher != null)
+            _buildAppliedVoucherChip(
+              voucher: _appliedShippingVoucher!,
+              type: 'shipping',
+              onRemove: _removeShippingVoucher,
+            ),
+          
+          // Thông báo freeship tự động
+          if (_isAutoFreeshipApplied && _appliedShippingVoucher == null)
             Container(
               margin: const EdgeInsets.only(top: 8),
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppColors.success.withValues(alpha: 0.12),
+                color: Colors.blue.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 18),
+                  const Icon(Icons.check_circle_rounded, color: Colors.blue, size: 18),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Tự động áp dụng: Freeship Ngày Đôi',
+                      'Tự động: Freeship Ngày Đôi',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.success,
+                            color: Colors.blue,
                             fontWeight: FontWeight.w600,
                           ),
                     ),
@@ -379,6 +574,60 @@ class _CheckoutScreenState extends State<CheckoutScreen> with SingleTickerProvid
                 ],
               ),
             ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAppliedVoucherChip({
+    required Map<String, dynamic> voucher,
+    required String type,
+    required VoidCallback onRemove,
+  }) {
+    final code = voucher[VoucherContract.colCode] ?? '';
+    final isShipping = type == 'shipping';
+    
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: isShipping 
+            ? Colors.blue.withValues(alpha: 0.15)
+            : AppColors.primaryLight.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: isShipping ? Colors.blue : AppColors.primary,
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            isShipping ? Icons.local_shipping : Icons.percent,
+            color: isShipping ? Colors.blue : AppColors.primary,
+            size: 18,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              isShipping 
+                  ? 'Freeship: $code'
+                  : 'Giảm giá: $code',
+              style: TextStyle(
+                color: isShipping ? Colors.blue : AppColors.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          InkWell(
+            onTap: onRemove,
+            borderRadius: BorderRadius.circular(12),
+            child: Icon(
+              Icons.close_rounded, 
+              color: isShipping ? Colors.blue : AppColors.textSecondary,
+              size: 20,
+            ),
+          ),
         ],
       ),
     );
@@ -556,7 +805,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> with SingleTickerProvid
     );
   }
 
-  Widget _buildSummaryRow(BuildContext context, String label, String value, {Color? valueColor}) {
+  Widget _buildSummaryRow(BuildContext context, String label, String value, {Color? valueColor, bool isDiscount = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -564,13 +813,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> with SingleTickerProvid
         children: [
           Text(
             label,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondary,
+              fontWeight: isDiscount ? FontWeight.w700 : FontWeight.w400,
+            ),
           ),
           Text(
             value,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: valueColor ?? AppColors.textPrimary,
+                  color: valueColor ?? (isDiscount ? AppColors.error : AppColors.textPrimary),
                   fontWeight: FontWeight.w600,
+                  decoration: isDiscount ? TextDecoration.none : null,
                 ),
           ),
         ],
@@ -584,21 +837,39 @@ class _CheckoutScreenState extends State<CheckoutScreen> with SingleTickerProvid
       decoration: _cardDecoration(),
       child: Column(
         children: [
+          // Dòng 1: Tạm tính (Tiền hàng)
           _buildSummaryRow(context, 'Tạm tính', _formatMoney(_subTotal)),
+          
+          // Dòng 2: Phí vận chuyển (Mặc định)
           _buildSummaryRow(
             context,
-            'Phí giao hàng',
-            _shippingFee == 0 ? 'Miễn phí' : _formatMoney(_shippingFee),
-            valueColor: _shippingFee == 0 ? AppColors.success : AppColors.textPrimary,
+            'Phí vận chuyển',
+            _formatMoney(_shippingFeeDefault),
+            valueColor: _shippingFee == 0 ? Colors.grey : AppColors.textPrimary,
           ),
+          
+          // Dòng 3: Giảm giá hàng hóa (Trừ tiền nếu có mã discount)
           if (_discountAmount > 0)
             _buildSummaryRow(
               context,
-              'Giảm giá voucher',
+              'Giảm giá hàng hóa',
               '-${_formatMoney(_discountAmount)}',
               valueColor: AppColors.error,
+              isDiscount: true,
             ),
+          
+          // Dòng 4: Giảm phí vận chuyển (Trừ tiền nếu có mã shipping)
+          if (_shippingDiscountAmount > 0)
+            _buildSummaryRow(
+              context,
+              'Giảm phí vận chuyển',
+              '-${_formatMoney(_shippingDiscountAmount)}',
+              valueColor: Colors.blue,
+              isDiscount: true,
+            ),
+          
           const Divider(height: 28),
+          
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -640,16 +911,34 @@ class _CheckoutScreenState extends State<CheckoutScreen> with SingleTickerProvid
       return;
     }
 
-    // Kiểm tra voucher usage limit trước khi đặt hàng
-    if (_selectedVoucher != null) {
-      final voucherId = _selectedVoucher!['id'] as String?;
+    // Kiểm tra voucher giảm giá trước khi đặt hàng
+    if (_appliedDiscountVoucher != null) {
+      final voucherId = _appliedDiscountVoucher!['id'] as String?;
       if (voucherId != null) {
         final remaining = await _voucherDao.getRemainingUsage(voucherId);
         if (remaining <= 0) {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Voucher đã hết lượt sử dụng!'),
+              content: Text('Voucher giảm giá đã hết lượt sử dụng!'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+          return;
+        }
+      }
+    }
+
+    // Kiểm tra voucher freeship trước khi đặt hàng
+    if (_appliedShippingVoucher != null) {
+      final voucherId = _appliedShippingVoucher!['id'] as String?;
+      if (voucherId != null) {
+        final remaining = await _voucherDao.getRemainingUsage(voucherId);
+        if (remaining <= 0) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Voucher freeship đã hết lượt sử dụng!'),
               backgroundColor: AppColors.error,
             ),
           );
@@ -676,7 +965,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> with SingleTickerProvid
       cartId: cart.id,
       cartItems: items.map((e) => {'product_id': e.productId, 'quantity': e.quantity}).toList(),
       totalAmount: totalAmount,
-      voucherId: _selectedVoucher?['id'],
+      voucherId: _appliedDiscountVoucher?['id'],
       discountAmount: _discountAmount,
       shippingFee: _shippingFee,
       paymentMethod: _selectedPaymentMethod,
@@ -687,9 +976,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> with SingleTickerProvid
     setState(() => _isSubmitting = false);
 
     if (success) {
-      // Trừ usage limit của voucher sau khi đặt hàng thành công
-      if (_selectedVoucher != null) {
-        final voucherId = _selectedVoucher!['id'] as String?;
+      // Trừ usage limit của voucher giảm giá
+      if (_appliedDiscountVoucher != null) {
+        final voucherId = _appliedDiscountVoucher!['id'] as String?;
+        if (voucherId != null) {
+          await _voucherDao.decrementUsageLimit(voucherId);
+        }
+      }
+
+      // Trừ usage limit của voucher freeship
+      if (_appliedShippingVoucher != null) {
+        final voucherId = _appliedShippingVoucher!['id'] as String?;
         if (voucherId != null) {
           await _voucherDao.decrementUsageLimit(voucherId);
         }
@@ -699,6 +996,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> with SingleTickerProvid
       await _notificationService.showOrderSuccess(
         title: 'Đặt hàng thành công! 🎉',
         body: 'Cảm ơn bạn đã mua sắm. Đơn hàng sen đá của bạn đang chờ xử lý.',
+        payload: 'order_list',
       );
 
       await cartProvider.loadCart(userId);
@@ -801,7 +1099,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> with SingleTickerProvid
     final cartProvider = context.watch<CartProvider>();
     final items = cartProvider.cartItems;
 
-    double totalAmount = (_subTotal + _shippingFee - _discountAmount);
+    // Tính tổng tiền: Tạm tính + Phí ship - Giảm giá hàng hóa - Giảm phí ship
+    double totalAmount = (_subTotal + _shippingFeeDefault - _discountAmount - _shippingDiscountAmount);
     if (totalAmount < 0) totalAmount = 0;
 
     return Scaffold(
@@ -857,6 +1156,473 @@ class _CheckoutScreenState extends State<CheckoutScreen> with SingleTickerProvid
   }
 }
 
+// ==================== VOUCHER BOTTOM SHEET ====================
+class _VoucherBottomSheet extends StatefulWidget {
+  final double subTotal;
+  final Map<String, dynamic>? appliedDiscountVoucher;
+  final Map<String, dynamic>? appliedShippingVoucher;
+  final Function(Map<String, dynamic>) onDiscountVoucherSelected;
+  final Function(Map<String, dynamic>) onShippingVoucherSelected;
+  final VoidCallback onDiscountVoucherRemoved;
+  final VoidCallback onShippingVoucherRemoved;
+  final Function(int) onTabChanged;
+
+  const _VoucherBottomSheet({
+    required this.subTotal,
+    this.appliedDiscountVoucher,
+    this.appliedShippingVoucher,
+    required this.onDiscountVoucherSelected,
+    required this.onShippingVoucherSelected,
+    required this.onDiscountVoucherRemoved,
+    required this.onShippingVoucherRemoved,
+    required this.onTabChanged,
+  });
+
+  @override
+  State<_VoucherBottomSheet> createState() => _VoucherBottomSheetState();
+}
+
+class _VoucherBottomSheetState extends State<_VoucherBottomSheet> with SingleTickerProviderStateMixin {
+  final VoucherDao _voucherDao = VoucherDao();
+  late TabController _tabController;
+  
+  List<Map<String, dynamic>> _discountVouchers = [];
+  List<Map<String, dynamic>> _shippingVouchers = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        widget.onTabChanged(_tabController.index);
+      }
+    });
+    _loadVouchers();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadVouchers() async {
+    try {
+      final discountVouchers = await _voucherDao.getActiveDiscountVouchers();
+      final shippingVouchers = await _voucherDao.getActiveShippingVouchers();
+      setState(() {
+        _discountVouchers = discountVouchers;
+        _shippingVouchers = shippingVouchers;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      builder: (context, scrollController) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              // Handle bar
+              Container(
+                margin: const EdgeInsets.only(top: 12),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              // Header
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    const Icon(Icons.local_offer_rounded, color: AppColors.primary),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Chọn Voucher',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+              // Tab bar
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: TabBar(
+                  controller: _tabController,
+                  indicator: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  labelColor: Colors.white,
+                  unselectedLabelColor: AppColors.textSecondary,
+                  labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                  dividerColor: Colors.transparent,
+                  tabs: const [
+                    Tab(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.percent, size: 16),
+                          SizedBox(width: 6),
+                          Text('Giảm giá'),
+                        ],
+                      ),
+                    ),
+                    Tab(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.local_shipping, size: 16),
+                          SizedBox(width: 6),
+                          Text('Freeship'),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Divider(height: 1),
+              // Voucher lists
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildVoucherList(_discountVouchers, 'discount', setModalState),
+                    _buildVoucherList(_shippingVouchers, 'shipping', setModalState),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVoucherList(List<Map<String, dynamic>> vouchers, String type, StateSetter setModalState) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (vouchers.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              type == 'shipping' ? Icons.local_shipping_outlined : Icons.percent_outlined,
+              size: 60,
+              color: Colors.grey[300],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              type == 'shipping' ? 'Không có mã freeship' : 'Không có mã giảm giá',
+              style: TextStyle(color: Colors.grey[500]),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: vouchers.length,
+      itemBuilder: (context, index) {
+        final voucher = vouchers[index];
+        return _buildVoucherItem(voucher, type, setModalState);
+      },
+    );
+  }
+
+  Widget _buildVoucherItem(Map<String, dynamic> voucher, String type, StateSetter setModalState) {
+    final discountType = voucher[VoucherContract.colDiscountType] ?? '';
+    final discountValue = (voucher[VoucherContract.colDiscountValue] as num?)?.toDouble() ?? 0;
+    final minOrder = (voucher[VoucherContract.colMinOrderValue] as num?)?.toDouble() ?? 0;
+    final code = voucher[VoucherContract.colCode] ?? '';
+    final name = voucher[VoucherContract.colName] ?? '';
+    final quantity = voucher[VoucherContract.colQuantity] as int? ?? 0;
+    final usedCount = voucher[VoucherContract.colUsedCount] as int? ?? 0;
+    final endDate = voucher[VoucherContract.colEndDate] as int?;
+    final isNoExpiry = endDate == null;
+    final isUsageExhausted = usedCount >= quantity;
+    final isExpired = !isNoExpiry && DateTime.now().millisecondsSinceEpoch > endDate;
+    final isDisabled = isUsageExhausted || isExpired;
+    final isShipping = type == 'shipping';
+    final isEligible = widget.subTotal >= minOrder;
+    
+    final isApplied = isShipping
+        ? (widget.appliedShippingVoucher?[VoucherContract.colCode] as String?) == code
+        : (widget.appliedDiscountVoucher?[VoucherContract.colCode] as String?) == code;
+
+    return Opacity(
+      opacity: isDisabled ? 0.5 : 1.0,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: isApplied ? (isShipping ? Colors.blue[50] : AppColors.primaryLight.withValues(alpha: 0.2)) : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isApplied 
+                ? (isShipping ? Colors.blue : AppColors.primary)
+                : (isDisabled ? Colors.grey[300]! : (isShipping ? Colors.blue[200]! : Colors.orange[200]!)),
+            width: isApplied ? 2 : 1.5,
+          ),
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                // Left side
+                Container(
+                  width: 85,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: isShipping
+                          ? [const Color(0xFF3498db), const Color(0xFF2980b9)]
+                          : [const Color(0xFFe67e22), const Color(0xFFd35400)],
+                    ),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(10),
+                      bottomLeft: Radius.circular(10),
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (isShipping)
+                        const Icon(Icons.local_shipping, color: Colors.white, size: 26)
+                      else
+                        Text(
+                          discountType == 'percent'
+                              ? '${discountValue.toInt()}%'
+                              : '${(discountValue / 1000).toStringAsFixed(0)}K',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      const SizedBox(height: 2),
+                      Text(
+                        isShipping ? 'Freeship' : 'GIẢM',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Right side
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: (isShipping ? Colors.blue : Colors.orange).withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  code,
+                                  style: TextStyle(
+                                    color: isShipping ? Colors.blue : Colors.orange[700],
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            if (isUsageExhausted) ...[
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey,
+                                    borderRadius: BorderRadius.circular(3),
+                                  ),
+                                  child: const Text(
+                                    'HẾT LƯỢT',
+                                    style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w700),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ),
+                            ],
+                            if (isExpired) ...[
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.error,
+                                    borderRadius: BorderRadius.circular(3),
+                                  ),
+                                  child: const Text(
+                                    'HẾT HẠN',
+                                    style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w700),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          name,
+                          style: const TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        if (!isEligible)
+                          Text(
+                            'Cần đơn tối thiểu ${_formatMoney(minOrder)}',
+                            style: TextStyle(
+                              color: Colors.red[400],
+                              fontSize: 10,
+                            ),
+                          )
+                        else if (minOrder > 0)
+                          Text(
+                            'Tối thiểu ${_formatMoney(minOrder)}',
+                            style: TextStyle(
+                              color: Colors.grey[500],
+                              fontSize: 10,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Action
+                Padding(
+                  padding: const EdgeInsets.only(right: 10),
+                  child: isDisabled
+                      ? Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            isUsageExhausted ? 'Hết lượt' : 'Hết hạn',
+                            style: TextStyle(
+                              color: Colors.grey[500],
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        )
+                      : isApplied
+                          ? TextButton(
+                              onPressed: () {
+                                if (isShipping) {
+                                  widget.onShippingVoucherRemoved();
+                                } else {
+                                  widget.onDiscountVoucherRemoved();
+                                }
+                                setModalState(() {}); // Cập nhật UI bottom sheet ngay
+                              },
+                              style: TextButton.styleFrom(
+                                backgroundColor: Colors.red[50],
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              ),
+                              child: const Text(
+                                'Bỏ chọn',
+                                style: TextStyle(color: Colors.red, fontSize: 11, fontWeight: FontWeight.w600),
+                              ),
+                            )
+                          : ElevatedButton(
+                              onPressed: isEligible
+                                  ? () {
+                                      if (isShipping) {
+                                        widget.onShippingVoucherSelected(voucher);
+                                      } else {
+                                        widget.onDiscountVoucherSelected(voucher);
+                                      }
+                                      setModalState(() {}); // Cập nhật UI bottom sheet ngay
+                                    }
+                                  : null,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: isShipping ? Colors.blue : AppColors.primary,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: const Text(
+                                'Áp dụng',
+                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatMoney(double value) {
+    if (value >= 1000) {
+      return '${(value / 1000).toStringAsFixed(0)}K';
+    }
+    return '${value.toInt()}đ';
+  }
+}
+
+// ==================== SHIMMER & DIALOG ====================
 class _ShimmerBox extends StatelessWidget {
   final AnimationController controller;
   final double width;

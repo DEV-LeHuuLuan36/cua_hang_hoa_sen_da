@@ -16,13 +16,17 @@ class ProductDao {
     );
   }
 
-  // Lấy danh sách tất cả sản phẩm
+  // Lấy danh sách tất cả sản phẩm (kèm ảnh chính)
   Future<List<Succulent>> getAllProducts() async {
     final db = await _dbHelper.database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      ProductContract.tableName,
-      orderBy: '${ProductContract.colCreatedAt} DESC',
-    );
+    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+      SELECT p.*, 
+             (SELECT pi.image_url FROM product_images pi 
+              WHERE pi.product_id = p.id AND pi.is_primary = 1 
+              LIMIT 1) as primary_image
+      FROM products p
+      ORDER BY p.created_at DESC
+    ''');
 
     return List.generate(maps.length, (i) {
       return Succulent.fromMap(maps[i]);
@@ -119,10 +123,10 @@ class ProductDao {
     final updatedRows = await txn.rawUpdate(
       '''
       UPDATE ${ProductContract.tableName}
-      SET ${ProductContract.colQuantity} = ${ProductContract.colQuantity} - ?,
+      SET ${ProductContract.colStock} = ${ProductContract.colStock} - ?,
           ${ProductContract.colUpdatedAt} = ?
       WHERE ${ProductContract.colId} = ?
-        AND ${ProductContract.colQuantity} >= ?
+        AND ${ProductContract.colStock} >= ?
       ''',
       [quantity, DateTime.now().millisecondsSinceEpoch, productId, quantity],
     );
@@ -130,5 +134,15 @@ class ProductDao {
     if (updatedRows == 0) {
       throw Exception('Không đủ tồn kho cho sản phẩm: $productId');
     }
+  }
+
+  // Đếm sản phẩm sắp hết hàng (stock < threshold)
+  Future<int> countLowStockProducts({int threshold = 5}) async {
+    final db = await _dbHelper.database;
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM ${ProductContract.tableName} WHERE ${ProductContract.colStock} < ?',
+      [threshold],
+    );
+    return (result.first['count'] as int?) ?? 0;
   }
 }

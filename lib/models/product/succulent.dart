@@ -24,6 +24,7 @@ class Succulent {
   final int views;
   final int createdAt;
   final int updatedAt;
+  final String? primaryImage;
 
   Succulent({
     required this.id,
@@ -47,6 +48,7 @@ class Succulent {
     this.views = 0,
     required this.createdAt,
     required this.updatedAt,
+    this.primaryImage,
   });
 
   Map<String, dynamic> toMap() {
@@ -94,7 +96,7 @@ class Succulent {
       size: map[ProductContract.colSize],
       color: map[ProductContract.colColor],
       origin: map[ProductContract.colOrigin],
-      careInstruction: CareInstruction.fromMap(map), // Khởi tạo từ cùng map CSDL
+      careInstruction: CareInstruction.fromMap(map),
       isBestseller: map[ProductContract.colIsBestseller] == 1,
       isNew: map[ProductContract.colIsNew] == 1,
       rating: (map[ProductContract.colRating] ?? 0.0).toDouble(),
@@ -102,6 +104,7 @@ class Succulent {
       views: map[ProductContract.colViews] ?? 0,
       createdAt: map[ProductContract.colCreatedAt],
       updatedAt: map[ProductContract.colUpdatedAt],
+      primaryImage: map['primary_image'],
     );
   }
 }

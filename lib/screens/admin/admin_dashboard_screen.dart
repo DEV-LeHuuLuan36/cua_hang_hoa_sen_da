@@ -179,6 +179,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text('Quản Trị Cửa Hàng', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
         backgroundColor: AppColors.primaryDark,
         centerTitle: true,
@@ -192,78 +193,89 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           )
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ListView(
-          children: [
-            if (_isLoading)
-              GridView.count(
-                crossAxisCount: 3,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 0.72,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                children: const [
-                  ShimmerBox(width: double.infinity, height: 120, borderRadius: 16),
-                  ShimmerBox(width: double.infinity, height: 120, borderRadius: 16),
-                  ShimmerBox(width: double.infinity, height: 120, borderRadius: 16),
-                ],
-              )
-            else
-              GridView.count(
-                crossAxisCount: 3,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 0.72,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                children: [
-                  _buildStatCard(
-                    title: 'Tổng doanh thu',
-                    value: _formatMoney(_totalRevenue),
-                    icon: Icons.paid_rounded,
-                    iconColor: AppColors.success,
-                  ),
-                  _buildStatCard(
-                    title: 'Đơn hàng mới',
-                    value: _newOrders.toString(),
-                    icon: Icons.receipt_long_rounded,
-                    iconColor: AppColors.warning,
-                  ),
-                  _buildStatCard(
-                    title: 'Sắp hết hàng',
-                    value: _lowStockProducts.toString(),
-                    icon: Icons.inventory_2_rounded,
-                    iconColor: AppColors.error,
-                  ),
-                ],
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: ListView(
+            children: [
+              if (_isLoading)
+                GridView.count(
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 0.65,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: const [
+                    ShimmerBox(width: double.infinity, height: 120, borderRadius: 16),
+                    ShimmerBox(width: double.infinity, height: 120, borderRadius: 16),
+                    ShimmerBox(width: double.infinity, height: 120, borderRadius: 16),
+                  ],
+                )
+              else
+                GridView.count(
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 0.65,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: [
+                    _buildStatCard(
+                      title: 'Tổng doanh thu',
+                      value: _formatMoney(_totalRevenue),
+                      icon: Icons.paid_rounded,
+                      iconColor: AppColors.success,
+                    ),
+                    _buildStatCard(
+                      title: 'Đơn hàng mới',
+                      value: _newOrders.toString(),
+                      icon: Icons.receipt_long_rounded,
+                      iconColor: AppColors.warning,
+                    ),
+                    _buildStatCard(
+                      title: 'Sắp hết hàng',
+                      value: _lowStockProducts.toString(),
+                      icon: Icons.inventory_2_rounded,
+                      iconColor: AppColors.error,
+                    ),
+                  ],
+                ),
+              const SizedBox(height: 20),
+              _buildFeatureCard(
+                context: context,
+                title: 'Quản lý sản phẩm',
+                icon: Icons.inventory_2_outlined,
+                color: Colors.blue,
+                route: RouteNames.adminProductList,
               ),
-            const SizedBox(height: 20),
-            _buildFeatureCard(
-              context: context,
-              title: 'Quản lý sản phẩm',
-              icon: Icons.inventory_2_outlined,
-              color: Colors.blue,
-              route: RouteNames.adminProductList,
-            ),
-            const SizedBox(height: 12),
-            _buildFeatureCard(
-              context: context,
-              title: 'Quản lý đơn hàng',
-              icon: Icons.receipt_long_outlined,
-              color: Colors.orange,
-              route: RouteNames.adminOrderList,
-            ),
-            const SizedBox(height: 12),
-            _buildFeatureCard(
-              context: context,
-              title: 'Báo cáo cửa hàng',
-              icon: Icons.analytics_outlined,
-              color: Colors.deepPurple,
-              route: RouteNames.adminReport,
-            ),
-          ],
+              const SizedBox(height: 12),
+              _buildFeatureCard(
+                context: context,
+                title: 'Quản lý đơn hàng',
+                icon: Icons.receipt_long_outlined,
+                color: Colors.orange,
+                route: RouteNames.adminOrderList,
+              ),
+              const SizedBox(height: 12),
+              _buildFeatureCard(
+                context: context,
+                title: 'Quản lý Voucher',
+                icon: Icons.local_offer_outlined,
+                color: Colors.pink,
+                route: RouteNames.adminVoucher,
+              ),
+              const SizedBox(height: 12),
+              _buildFeatureCard(
+                context: context,
+                title: 'Báo cáo cửa hàng',
+                icon: Icons.analytics_outlined,
+                color: Colors.deepPurple,
+                route: RouteNames.adminReport,
+              ),
+              const SizedBox(height: 100),
+            ],
+          ),
         ),
       ),
     );

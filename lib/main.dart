@@ -5,6 +5,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'routes/app_routes.dart';
 import 'utils/constants/route_names.dart';
+import 'services/notification_service.dart';
 
 // 1. Import DAOs
 import 'database/daos/user_dao.dart';
@@ -89,6 +90,7 @@ class MyApp extends StatelessWidget {
     final auth = Provider.of<AuthProvider>(context, listen: false);
 
     return MaterialApp(
+      navigatorKey: NotificationService.navigatorKey,
       title: 'Cửa Hàng Hoa Sen Đá',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
