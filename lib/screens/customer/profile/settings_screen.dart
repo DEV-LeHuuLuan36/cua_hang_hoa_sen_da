@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../theme/app_colors.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../providers/theme_provider.dart';
 import '../../../utils/constants/route_names.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -17,20 +18,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
+    final themeProvider = context.watch<ThemeProvider>();
     final user = authProvider.currentUser;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
       appBar: AppBar(
         title: const Text(
           'Cài đặt tài khoản',
-          style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: AppColors.textPrimary),
+          icon: const Icon(Icons.arrow_back_ios),
           onPressed: () => Navigator.pop(context),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
         elevation: 0.5,
         centerTitle: true,
       ),
@@ -38,24 +41,58 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSectionTitle('Tài khoản'),
+            _buildSectionTitle('Tài khoản', isDark),
             _buildSettingItem(
               icon: Icons.person_outline,
               title: 'Chỉnh sửa hồ sơ',
+              isDark: isDark,
               onTap: () => _showEditProfileDialog(context, user?.fullName ?? '', user?.phone ?? ''),
             ),
             _buildSettingItem(
               icon: Icons.shield_outlined,
               title: 'Đổi mật khẩu',
+              isDark: isDark,
               onTap: () => _showChangePasswordDialog(context),
             ),
 
-            _buildSectionTitle('Thông báo'),
+            _buildSectionTitle('Giao diện', isDark),
             Container(
-              color: Colors.white,
+              color: isDark ? AppColors.darkCard : Colors.white,
+              child: SwitchListTile(
+                secondary: Icon(
+                  Icons.dark_mode,
+                  color: isDark ? AppColors.darkIcon : AppColors.primary,
+                ),
+                title: Text(
+                  'Chế độ Tối (Dark Mode)',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                  ),
+                ),
+                value: themeProvider.isDarkMode,
+                activeColor: AppColors.primary,
+                onChanged: (value) {
+                  themeProvider.toggleTheme(value);
+                },
+              ),
+            ),
+
+            _buildSectionTitle('Thông báo', isDark),
+            Container(
+              color: isDark ? AppColors.darkCard : Colors.white,
               child: ListTile(
-                leading: const Icon(Icons.notifications_none, color: AppColors.primary),
-                title: const Text('Thông báo đẩy', style: TextStyle(fontSize: 16)),
+                leading: Icon(
+                  Icons.notifications_none,
+                  color: isDark ? AppColors.darkIcon : AppColors.primary,
+                ),
+                title: Text(
+                  'Thông báo đẩy',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                  ),
+                ),
                 trailing: Switch(
                   value: _isNotificationEnabled,
                   activeColor: AppColors.primary,
@@ -68,26 +105,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
 
-            _buildSectionTitle('Hỗ trợ & Pháp lý'),
+            _buildSectionTitle('Hỗ trợ & Pháp lý', isDark),
             _buildSettingItem(
               icon: Icons.help_outline,
               title: 'Trung tâm trợ giúp',
+              isDark: isDark,
               onTap: () => Navigator.pushNamed(context, RouteNames.support),
             ),
             _buildSettingItem(
               icon: Icons.policy_outlined,
               title: 'Chính sách bảo mật',
+              isDark: isDark,
               onTap: () => Navigator.pushNamed(context, RouteNames.legal),
             ),
             _buildSettingItem(
               icon: Icons.info_outline,
               title: 'Về ứng dụng',
-              trailing: const Text('v1.0.0', style: TextStyle(color: Colors.grey)),
+              isDark: isDark,
+              trailing: Text(
+                'v1.0.0',
+                style: TextStyle(color: isDark ? AppColors.darkTextSecondary : Colors.grey),
+              ),
               onTap: () {},
             ),
 
             const SizedBox(height: 30),
-            _buildDeleteAccountButton(),
+            _buildDeleteAccountButton(isDark),
             const SizedBox(height: 40),
           ],
         ),
@@ -101,6 +144,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _showEditProfileDialog(BuildContext context, String currentName, String currentPhone) async {
     final nameController = TextEditingController(text: currentName);
     final phoneController = TextEditingController(text: currentPhone);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final result = await showDialog<Map<String, String>>(
       context: context,
@@ -111,7 +155,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         return StatefulBuilder(
           builder: (dialogContext, setDialogState) {
             return AlertDialog(
-              title: const Text('Chỉnh sửa hồ sơ'),
+              backgroundColor: isDark ? AppColors.darkCard : null,
+              title: Text(
+                'Chỉnh sửa hồ sơ',
+                style: TextStyle(
+                  color: isDark ? AppColors.darkTextPrimary : null,
+                ),
+              ),
               content: Form(
                 key: formKey,
                 child: Column(
@@ -164,11 +214,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ? null
                       : () async {
                           if (formKey.currentState!.validate()) {
-                            // Đọc text TRƯỚC KHI pop
                             final name = nameController.text.trim();
                             final phone = phoneController.text.trim();
-                            
-                            // Đóng dialog và trả về kết quả
                             Navigator.pop(dialogContext, {'name': name, 'phone': phone});
                           }
                         },
@@ -181,7 +228,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       },
     );
 
-    // Xử lý kết quả sau khi dialog đã đóng
     if (result == null) {
       nameController.dispose();
       phoneController.dispose();
@@ -212,6 +258,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // DIALOG ĐỔI MẬT KHẨU
   // =====================
   Future<void> _showChangePasswordDialog(BuildContext context) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     final result = await showDialog<Map<String, String>>(
       context: context,
       builder: (dialogContext) {
@@ -226,7 +274,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         return StatefulBuilder(
           builder: (dialogContext, setDialogState) {
             return AlertDialog(
-              title: const Text('Đổi mật khẩu'),
+              backgroundColor: isDark ? AppColors.darkCard : null,
+              title: Text(
+                'Đổi mật khẩu',
+                style: TextStyle(
+                  color: isDark ? AppColors.darkTextPrimary : null,
+                ),
+              ),
               content: Form(
                 key: formKey,
                 child: Column(
@@ -309,10 +363,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
                   onPressed: () {
                     if (formKey.currentState!.validate()) {
-                      // Đọc text TRƯỚC KHI pop
                       final oldPass = oldPasswordController.text;
                       final newPass = newPasswordController.text;
-                      // Trả về kết quả
                       Navigator.pop(dialogContext, {'old': oldPass, 'new': newPass});
                     }
                   },
@@ -325,12 +377,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       },
     );
 
-    // Xử lý kết quả sau khi dialog đã đóng
     if (result == null) return;
 
     final authProvider = context.read<AuthProvider>();
-
-    // Kiểm tra mật khẩu cũ
     final isValid = await authProvider.verifyOldPassword(result['old']!);
 
     if (!context.mounted) return;
@@ -345,7 +394,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       return;
     }
 
-    // Đổi mật khẩu
     final success = await authProvider.changePassword(result['new']!);
 
     if (!context.mounted) return;
@@ -362,21 +410,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // LUỒNG XÓA TÀI KHOẢN
   // =====================
   Future<void> _handleDeleteAccountFlow(BuildContext context) async {
-    // Bước 1: Dialog Cảnh báo lớp 1
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     final shouldContinue = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        title: const Row(
+        backgroundColor: isDark ? AppColors.darkCard : null,
+        title: Row(
           children: [
-            Icon(Icons.warning_amber_rounded, color: Colors.orange),
-            SizedBox(width: 8),
-            Text('Xóa tài khoản?'),
+            const Icon(Icons.warning_amber_rounded, color: Colors.orange),
+            const SizedBox(width: 8),
+            Text(
+              'Xóa tài khoản?',
+              style: TextStyle(color: isDark ? AppColors.darkTextPrimary : null),
+            ),
           ],
         ),
-        content: const Text(
+        content: Text(
           'Bạn có chắc chắn muốn xóa tài khoản không?\n\n'
           'Mọi dữ liệu đơn hàng và thông tin cá nhân sẽ bị xóa vĩnh viễn và không thể khôi phục.',
+          style: TextStyle(color: isDark ? AppColors.darkTextSecondary : null),
         ),
         actions: [
           TextButton(
@@ -391,16 +445,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     );
 
-    // Bước 1a: Nếu false thì return
     if (shouldContinue != true) return;
 
-    // Bước 2: Dialog nhập mật khẩu
-    final password = await _showPasswordDialog(context);
+    final password = await _showPasswordDialog(context, isDark);
 
-    // Bước 3: Kiểm tra password rỗng
     if (password == null || password.isEmpty) return;
 
-    // Bước 4: Verify password
     final authProvider = context.read<AuthProvider>();
     final isValid = await authProvider.verifyOldPassword(password);
 
@@ -416,13 +466,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       return;
     }
 
-    // Bước 5: Gọi DAO xóa User trong Database
     final success = await authProvider.deleteAccount();
 
     if (!context.mounted) return;
 
     if (success) {
-      // Chuyển thẳng về trang login
       Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(
         RouteNames.login,
         (route) => false,
@@ -438,14 +486,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   // =====================
-  // DIALOG NHẬP MẬT KHẨU (MẪU CHUẨN)
+  // DIALOG NHẬP MẬT KHẨU
   // =====================
-  Future<String?> _showPasswordDialog(BuildContext context) {
-    final TextEditingController passwordController = TextEditingController();
+  Future<String?> _showPasswordDialog(BuildContext context, bool isDark) {
+    final passwordController = TextEditingController();
     return showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Xác nhận Mật khẩu'),
+        backgroundColor: isDark ? AppColors.darkCard : null,
+        title: Text(
+          'Xác nhận Mật khẩu',
+          style: TextStyle(color: isDark ? AppColors.darkTextPrimary : null),
+        ),
         content: TextField(
           controller: passwordController,
           obscureText: true,
@@ -459,7 +511,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           TextButton(
             onPressed: () {
-              // ĐỌC TEXT TRƯỚC, POP SAU
               final text = passwordController.text.trim();
               Navigator.of(dialogContext).pop(text);
             },
@@ -473,15 +524,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // =====================
   // WIDGET HELPER
   // =====================
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(String title, bool isDark) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
       child: Text(
         title.toUpperCase(),
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.bold,
-          color: AppColors.textSecondary,
+          color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
           letterSpacing: 0.5,
         ),
       ),
@@ -492,25 +543,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required IconData icon,
     required String title,
     required VoidCallback onTap,
+    required bool isDark,
     Widget? trailing,
   }) {
     return Container(
-      color: Colors.white,
+      color: isDark ? AppColors.darkCard : Colors.white,
       child: Column(
         children: [
           ListTile(
-            leading: Icon(icon, color: AppColors.primary),
-            title: Text(title, style: const TextStyle(fontSize: 16)),
-            trailing: trailing ?? const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+            leading: Icon(icon, color: isDark ? AppColors.darkIcon : AppColors.primary),
+            title: Text(
+              title,
+              style: TextStyle(
+                fontSize: 16,
+                color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+              ),
+            ),
+            trailing: trailing ?? Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: isDark ? AppColors.darkTextSecondary : Colors.grey,
+            ),
             onTap: onTap,
           ),
-          const Divider(height: 1, indent: 56),
+          Divider(
+            height: 1,
+            indent: 56,
+            color: isDark ? AppColors.darkBorder : const Color(0xFFE0E0E0),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildDeleteAccountButton() {
+  Widget _buildDeleteAccountButton(bool isDark) {
     return Center(
       child: TextButton(
         onPressed: () => _handleDeleteAccountFlow(context),

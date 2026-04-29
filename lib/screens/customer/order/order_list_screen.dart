@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../theme/app_colors.dart';
+import '../../../utils/theme_helper.dart';
 import '../../../providers/order_provider.dart';
 import '../../../providers/auth_provider.dart';
-import '../../../utils/constants/route_names.dart';
 
 class OrderListScreen extends StatefulWidget {
   const OrderListScreen({Key? key}) : super(key: key);
@@ -16,7 +16,6 @@ class _OrderListScreenState extends State<OrderListScreen> {
   @override
   void initState() {
     super.initState();
-    // Tải danh sách đơn hàng của User đang đăng nhập
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final userId = context.read<AuthProvider>().currentUser?.id;
       if (userId != null) {
@@ -27,21 +26,26 @@ class _OrderListScreenState extends State<OrderListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return DefaultTabController(
       length: 4,
       child: Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: ThemeHelper.background(context),
         appBar: AppBar(
-          title: const Text('Đơn hàng của tôi', style: TextStyle(color: AppColors.textPrimary)),
-          backgroundColor: Colors.white,
+          title: Text(
+            'Đơn hàng của tôi',
+            style: TextStyle(color: ThemeHelper.textPrimary(context)),
+          ),
+          backgroundColor: ThemeHelper.surface(context),
           elevation: 0,
-          iconTheme: const IconThemeData(color: AppColors.textPrimary),
-          bottom: const TabBar(
+          iconTheme: IconThemeData(color: ThemeHelper.textPrimary(context)),
+          bottom: TabBar(
             isScrollable: true,
             labelColor: AppColors.primary,
-            unselectedLabelColor: Colors.grey,
+            unselectedLabelColor: isDark ? AppColors.darkTextSecondary : Colors.grey,
             indicatorColor: AppColors.primary,
-            tabs: [
+            tabs: const [
               Tab(text: 'Chờ xác nhận'),
               Tab(text: 'Đang giao'),
               Tab(text: 'Hoàn thành'),
@@ -52,17 +56,17 @@ class _OrderListScreenState extends State<OrderListScreen> {
         body: Consumer<OrderProvider>(
           builder: (context, orderProvider, child) {
             if (orderProvider.isLoading) {
-              return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+              return Center(child: CircularProgressIndicator(color: isDark ? AppColors.primary : AppColors.primary));
             }
 
             final myOrders = orderProvider.myOrders;
 
             return TabBarView(
               children: [
-                _buildOrderList(myOrders, 'PENDING', AppColors.warning),
-                _buildOrderList(myOrders, 'SHIPPING', Colors.blue),
-                _buildOrderList(myOrders, 'DELIVERED', AppColors.success),
-                _buildOrderList(myOrders, 'CANCELLED', AppColors.error),
+                _buildOrderList(myOrders, 'PENDING', AppColors.warning, isDark),
+                _buildOrderList(myOrders, 'SHIPPING', Colors.blue, isDark),
+                _buildOrderList(myOrders, 'DELIVERED', AppColors.success, isDark),
+                _buildOrderList(myOrders, 'CANCELLED', AppColors.error, isDark),
               ],
             );
           },
@@ -71,11 +75,16 @@ class _OrderListScreenState extends State<OrderListScreen> {
     );
   }
 
-  Widget _buildOrderList(List<Map<String, dynamic>> orders, String statusKey, Color statusColor) {
+  Widget _buildOrderList(List<Map<String, dynamic>> orders, String statusKey, Color statusColor, bool isDark) {
     final filteredOrders = orders.where((o) => o['order_status'] == statusKey).toList();
 
     if (filteredOrders.isEmpty) {
-      return const Center(child: Text('Không có đơn hàng nào ở trạng thái này.'));
+      return Center(
+        child: Text(
+          'Không có đơn hàng nào ở trạng thái này.',
+          style: TextStyle(color: ThemeHelper.textSecondary(context)),
+        ),
+      );
     }
 
     return ListView.builder(
@@ -87,18 +96,25 @@ class _OrderListScreenState extends State<OrderListScreen> {
           margin: const EdgeInsets.only(bottom: 16),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: ThemeHelper.surface(context),
             borderRadius: BorderRadius.circular(12),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8)],
+            boxShadow: [
+              BoxShadow(
+                color: (isDark ? Colors.black : Colors.black).withValues(alpha: 0.05),
+                blurRadius: 8,
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Mã ĐH: #${order['order_number']}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text(
+                    'Mã ĐH: #${order['order_number']}',
+                    style: TextStyle(fontWeight: FontWeight.bold, color: ThemeHelper.textPrimary(context)),
+                  ),
                   Text(
                     statusKey == 'PENDING' ? 'Chờ xác nhận' :
                     statusKey == 'SHIPPING' ? 'Đang giao' :
@@ -107,20 +123,25 @@ class _OrderListScreenState extends State<OrderListScreen> {
                   ),
                 ],
               ),
-              const Divider(height: 24),
-
-              // Thông tin (Có thể nối với order_items để hiển thị chi tiết sản phẩm)
-              Text('Ngày đặt: ${DateTime.fromMillisecondsSinceEpoch(order['created_at']).toString().substring(0, 16)}', style: const TextStyle(color: AppColors.textSecondary)),
+              Divider(height: 24, color: ThemeHelper.divider(context)),
+              Text(
+                'Ngày đặt: ${DateTime.fromMillisecondsSinceEpoch(order['created_at']).toString().substring(0, 16)}',
+                style: TextStyle(color: ThemeHelper.textSecondary(context)),
+              ),
               const SizedBox(height: 8),
-              Text('Phương thức: ${order['payment_method']}', style: const TextStyle(color: AppColors.textSecondary)),
-              const Divider(height: 24),
-
-              // Footer & Button
+              Text(
+                'Phương thức: ${order['payment_method']}',
+                style: TextStyle(color: ThemeHelper.textSecondary(context)),
+              ),
+              Divider(height: 24, color: ThemeHelper.divider(context)),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Thành tiền:', style: TextStyle(color: AppColors.textSecondary)),
-                  Text('${order['total']}đ', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryDark)),
+                  Text('Thành tiền:', style: TextStyle(color: ThemeHelper.textSecondary(context))),
+                  Text(
+                    '${order['total']}đ',
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryDark),
+                  ),
                 ],
               ),
               const SizedBox(height: 12),
@@ -133,7 +154,6 @@ class _OrderListScreenState extends State<OrderListScreen> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                   onPressed: () {
-                    // Áp dụng ID-Only Rule: Chuyển sang màn chi tiết bằng ID [2]
                     Navigator.pushNamed(context, '/order-detail', arguments: order['id']);
                   },
                   child: const Text('XEM CHI TIẾT'),

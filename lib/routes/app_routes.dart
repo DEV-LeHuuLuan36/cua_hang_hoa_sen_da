@@ -4,6 +4,7 @@ import '../screens/customer/profile/settings_screen.dart';
 import '../screens/customer/support/support_screen.dart';
 import '../screens/customer/legal/legal_screen.dart';
 import '../screens/customer/notification/notification_screen.dart';
+import '../screens/customer/product/all_reviews_screen.dart';
 import '../utils/constants/route_names.dart';
 
 // Auth
@@ -119,6 +120,11 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const SettingsScreen());
       case RouteNames.myReviews:
         return MaterialPageRoute(builder: (_) => const MyReviewsScreen());
+      case RouteNames.allReviews:
+        final productId = settings.arguments as String;
+        return MaterialPageRoute(
+          builder: (_) => AllReviewsScreen(productId: productId),
+        );
       case RouteNames.notifications:
         return MaterialPageRoute(builder: (_) => const NotificationScreen());
       case RouteNames.support:

@@ -7,10 +7,11 @@ import 'contracts/order_contract.dart';
 import 'contracts/address_contract.dart';
 import 'contracts/cart_contract.dart';
 import 'contracts/notification_contract.dart';
+import 'contracts/review_contract.dart';
 
 class DatabaseHelper {
   static const _databaseName = "HoaSenDa.db";
-  static const _databaseVersion = 5;
+  static const _databaseVersion = 6;
 
   DatabaseHelper._privateConstructor();
   static final DatabaseHelper instance = DatabaseHelper._privateConstructor();
@@ -62,6 +63,25 @@ class DatabaseHelper {
       await db.rawUpdate(
         "UPDATE vouchers SET voucher_type = 'shipping' WHERE discount_type = 'freeship'",
       );
+    }
+    if (oldVersion < 6) {
+      // Thêm cột is_reviewed vào order_items nếu chưa có
+      try {
+        await db.execute("ALTER TABLE order_items ADD COLUMN is_reviewed INTEGER DEFAULT 0");
+      } catch (_) {}
+      // Tạo bảng reviews nếu chưa có
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS ${ReviewContract.tableName} (
+          ${ReviewContract.colId} TEXT PRIMARY KEY,
+          ${ReviewContract.colUserId} TEXT NOT NULL,
+          ${ReviewContract.colProductId} TEXT NOT NULL,
+          ${ReviewContract.colOrderId} TEXT NOT NULL,
+          ${ReviewContract.colRating} INTEGER NOT NULL,
+          ${ReviewContract.colComment} TEXT,
+          ${ReviewContract.colCreatedAt} INTEGER NOT NULL,
+          ${ReviewContract.colUpdatedAt} INTEGER NOT NULL
+        )
+      ''');
     }
   }
 
@@ -216,8 +236,25 @@ class DatabaseHelper {
           quantity INTEGER NOT NULL,
           price REAL NOT NULL,
           total REAL NOT NULL,
+          is_reviewed INTEGER DEFAULT 0,
           FOREIGN KEY (order_id) REFERENCES orders (id),
           FOREIGN KEY (product_id) REFERENCES products (id)
+        )
+      ''');
+
+    await db.execute('''
+        CREATE TABLE ${ReviewContract.tableName} (
+          ${ReviewContract.colId} TEXT PRIMARY KEY,
+          ${ReviewContract.colUserId} TEXT NOT NULL,
+          ${ReviewContract.colProductId} TEXT NOT NULL,
+          ${ReviewContract.colOrderId} TEXT NOT NULL,
+          ${ReviewContract.colRating} INTEGER NOT NULL,
+          ${ReviewContract.colComment} TEXT,
+          ${ReviewContract.colCreatedAt} INTEGER NOT NULL,
+          ${ReviewContract.colUpdatedAt} INTEGER NOT NULL,
+          FOREIGN KEY (user_id) REFERENCES users (id),
+          FOREIGN KEY (product_id) REFERENCES products (id),
+          FOREIGN KEY (order_id) REFERENCES orders (id)
         )
       ''');
 

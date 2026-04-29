@@ -6,6 +6,7 @@ import '../../../providers/recently_viewed_provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../utils/constants/route_names.dart';
 import '../../../widgets/common/product_card.dart';
+import '../../../widgets/filter/filter_bottom_sheet.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({Key? key}) : super(key: key);
@@ -18,177 +19,236 @@ class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    // Tải danh mục khi mở màn hình
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<SearchProvider>().loadCategories();
+    });
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
   }
 
-  // Hàm hiển thị BottomSheet Bộ Lọc
   void _showFilterSheet(BuildContext context) {
-    final searchProvider = context.read<SearchProvider>();
-    double? tempMinPrice = searchProvider.minPrice;
-    double? tempMaxPrice = searchProvider.maxPrice;
-    String? tempCareLevel = searchProvider.careLevel;
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setState) {
-            return Padding(
-              padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, left: 16, right: 16, top: 16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Bộ lọc tìm kiếm', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 16),
-
-                  // Lọc theo Khoảng giá
-                  const Text('Khoảng giá (VNĐ)', style: TextStyle(fontWeight: FontWeight.bold)),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(hintText: 'Tối thiểu'),
-                          onChanged: (val) => tempMinPrice = double.tryParse(val),
-                        ),
-                      ),
-                      const Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('-')),
-                      Expanded(
-                        child: TextField(
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(hintText: 'Tối đa'),
-                          onChanged: (val) => tempMaxPrice = double.tryParse(val),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Lọc theo Độ khó chăm sóc
-                  const Text('Độ khó chăm sóc', style: TextStyle(fontWeight: FontWeight.bold)),
-                  Wrap(
-                    spacing: 8,
-                    children: ['EASY', 'MEDIUM', 'HARD'].map((level) {
-                      final isSelected = tempCareLevel == level;
-                      return ChoiceChip(
-                        label: Text(level == 'EASY' ? 'Dễ' : level == 'MEDIUM' ? 'Trung bình' : 'Khó'),
-                        selected: isSelected,
-                        selectedColor: AppColors.primaryLight,
-                        onSelected: (selected) {
-                          setState(() {
-                            tempCareLevel = selected ? level : null;
-                          });
-                        },
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Các nút hành động
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () {
-                            searchProvider.clearFilter();
-                            Navigator.pop(ctx);
-                          },
-                          child: const Text('XÓA BỘ LỌC'),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-                          onPressed: () {
-                            searchProvider.applyFilter(
-                              minPrice: tempMinPrice,
-                              maxPrice: tempMaxPrice,
-                              careLevel: tempCareLevel,
-                            );
-                            Navigator.pop(ctx);
-                          },
-                          child: const Text('ÁP DỤNG', style: TextStyle(color: Colors.white)),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                ],
-              ),
-            );
-          },
-        );
-      },
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => const FilterBottomSheet(),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final searchProvider = context.watch<SearchProvider>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final hasFilters = searchProvider.hasActiveFilters;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        iconTheme: IconThemeData(color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
         title: TextField(
           controller: _searchController,
           autofocus: true,
-          decoration: const InputDecoration(
+          style: TextStyle(
+            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+          ),
+          decoration: InputDecoration(
             hintText: 'Tìm kiếm sen đá...',
+            hintStyle: TextStyle(
+              color: isDark ? AppColors.darkTextSecondary : Colors.grey,
+            ),
             border: InputBorder.none,
+            contentPadding: EdgeInsets.zero,
           ),
           onSubmitted: (value) {
-            context.read<SearchProvider>().searchProducts(value);
+            searchProvider.searchProducts(value);
           },
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.filter_list, color: AppColors.primary),
-            onPressed: () => _showFilterSheet(context),
-          )
+          // Nút xóa text tìm kiếm
+          if (_searchController.text.isNotEmpty)
+            IconButton(
+              icon: Icon(Icons.clear, color: isDark ? AppColors.darkTextSecondary : Colors.grey),
+              onPressed: () {
+                _searchController.clear();
+                searchProvider.searchProducts('');
+              },
+            ),
+          // Nút bộ lọc
+          Stack(
+            children: [
+              IconButton(
+                icon: Icon(
+                  Icons.tune,
+                  color: hasFilters ? AppColors.primary : (isDark ? AppColors.darkIcon : AppColors.primary),
+                ),
+                onPressed: () => _showFilterSheet(context),
+              ),
+              if (hasFilters)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: AppColors.accent,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ],
       ),
       body: Consumer<SearchProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading) {
-            return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+            return Center(
+              child: CircularProgressIndicator(color: isDark ? AppColors.primary : AppColors.primary),
+            );
           }
 
           final results = provider.searchResults;
 
-          if (results.isEmpty && _searchController.text.isNotEmpty) {
-            return const Center(child: Text('Không tìm thấy sản phẩm nào!'));
+          // Trạng thái trống - chưa tìm kiếm
+          if (_searchController.text.isEmpty && results.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.search,
+                    size: 80,
+                    color: isDark ? AppColors.darkBorder : Colors.grey[300],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Tìm kiếm sản phẩm',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w500,
+                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Nhập tên sản phẩm bạn muốn tìm',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            );
           }
 
-          return GridView.builder(
-            padding: const EdgeInsets.all(16),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 0.75,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-            ),
-            itemCount: results.length,
-            itemBuilder: (context, index) {
-              final product = results[index];
-              return ProductCard(
-                product: product,
-                enablePressScale: true,
-                onTap: () {
-                  final userId = context.read<AuthProvider>().currentUser?.id;
-                  if (userId != null) {
-                    context.read<RecentlyViewedProvider>().addViewedProduct(userId, product.id);
-                  }
-                  Navigator.pushNamed(context, RouteNames.productDetail, arguments: product.id);
-                },
-              );
-            },
+          // Không có kết quả
+          if (results.isEmpty && _searchController.text.isNotEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.search_off,
+                    size: 80,
+                    color: isDark ? AppColors.darkBorder : Colors.grey[300],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Không tìm thấy sản phẩm nào!',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w500,
+                      color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Thử từ khóa khác hoặc điều chỉnh bộ lọc',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  TextButton.icon(
+                    onPressed: () {
+                      searchProvider.resetFilter();
+                      _searchController.clear();
+                    },
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Xóa bộ lọc'),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          // Hiển thị kết quả
+          return Column(
+            children: [
+              // Thanh thông tin kết quả
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                color: isDark ? AppColors.darkSurface : Colors.grey[100],
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Tìm thấy ${results.length} sản phẩm',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                      ),
+                    ),
+                    if (hasFilters)
+                      TextButton(
+                        onPressed: () {
+                          searchProvider.resetFilter();
+                        },
+                        child: const Text('Xóa lọc'),
+                      ),
+                  ],
+                ),
+              ),
+              // Grid sản phẩm
+              Expanded(
+                child: GridView.builder(
+                  padding: const EdgeInsets.all(16),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 0.75,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                  ),
+                  itemCount: results.length,
+                  itemBuilder: (context, index) {
+                    final product = results[index];
+                    return ProductCard(
+                      product: product,
+                      enablePressScale: true,
+                      onTap: () {
+                        final userId = context.read<AuthProvider>().currentUser?.id;
+                        if (userId != null) {
+                          context.read<RecentlyViewedProvider>().addViewedProduct(userId, product.id);
+                        }
+                        Navigator.pushNamed(context, RouteNames.productDetail, arguments: product.id);
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
           );
         },
       ),

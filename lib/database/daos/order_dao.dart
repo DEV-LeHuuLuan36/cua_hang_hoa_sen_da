@@ -80,12 +80,22 @@ class OrderDao {
   }
 
   // 6. Lấy danh sách sản phẩm (items) bên trong đơn hàng đó
-  Future<List<Map<String, dynamic>>> getOrderItems(String orderId) async {
+  Future<List<Map<String, dynamic>>> getOrderItems(String orderId, {bool? isReviewed}) async {
     final database = await db;
-    return await database.query(
-      'order_items',
-      where: 'order_id = ?',
-      whereArgs: [orderId],
-    );
+    String whereClause = 'oi.order_id = ?';
+    List<dynamic> whereArgs = [orderId];
+
+    if (isReviewed != null) {
+      whereClause += ' AND oi.is_reviewed = ?';
+      whereArgs.add(isReviewed ? 1 : 0);
+    }
+
+    return await database.rawQuery('''
+      SELECT oi.*, oi.is_reviewed, p.name as product_name, p.price, pi.image_url as primary_image
+      FROM order_items oi
+      JOIN products p ON oi.product_id = p.id
+      LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_primary = 1
+      WHERE $whereClause
+    ''', whereArgs);
   }
 }

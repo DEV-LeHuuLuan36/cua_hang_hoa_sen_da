@@ -8,6 +8,7 @@ import '../../database/repositories/order_repository.dart';
 import '../../database/repositories/product_repository.dart';
 import '../../models/product/succulent.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/theme_helper.dart';
 import '../../utils/constants/route_names.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/common/pressable_scale.dart';
@@ -68,15 +69,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     required String value,
     required IconData icon,
     required Color iconColor,
+    required bool isDark,
   }) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: isDark ? AppColors.darkCard : AppColors.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.textPrimary.withValues(alpha: 0.08),
+            color: (isDark ? Colors.black : AppColors.textPrimary).withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, 6),
           )
@@ -100,8 +102,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             alignment: Alignment.centerLeft,
             child: Text(
               value,
-              style: const TextStyle(
-                color: AppColors.textPrimary,
+              style: TextStyle(
+                color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
@@ -110,7 +112,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           const SizedBox(height: 4),
           Text(
             title,
-            style: const TextStyle(color: AppColors.textSecondary),
+            style: TextStyle(color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
           ),
         ],
       ),
@@ -123,6 +125,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     required IconData icon,
     required Color color,
     required String route,
+    required bool isDark,
   }) {
     return PressableScale(
       child: InkWell(
@@ -134,11 +137,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: isDark ? AppColors.darkCard : AppColors.surface,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: AppColors.textPrimary.withValues(alpha: 0.08),
+                color: (isDark ? Colors.black : AppColors.textPrimary).withValues(alpha: 0.08),
                 blurRadius: 10,
                 offset: const Offset(0, 6),
               ),
@@ -159,14 +162,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                   ),
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.textSecondary),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 14,
+                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+              ),
             ],
           ),
         ),
@@ -176,11 +183,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: ThemeHelper.background(context),
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text('Quản Trị Cửa Hàng', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        title: const Text(
+          'Quản Trị Cửa Hàng',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
         backgroundColor: AppColors.primaryDark,
         centerTitle: true,
         actions: [
@@ -226,18 +238,21 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       value: _formatMoney(_totalRevenue),
                       icon: Icons.paid_rounded,
                       iconColor: AppColors.success,
+                      isDark: isDark,
                     ),
                     _buildStatCard(
                       title: 'Đơn hàng mới',
                       value: _newOrders.toString(),
                       icon: Icons.receipt_long_rounded,
                       iconColor: AppColors.warning,
+                      isDark: isDark,
                     ),
                     _buildStatCard(
                       title: 'Sắp hết hàng',
                       value: _lowStockProducts.toString(),
                       icon: Icons.inventory_2_rounded,
                       iconColor: AppColors.error,
+                      isDark: isDark,
                     ),
                   ],
                 ),
@@ -248,6 +263,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 icon: Icons.inventory_2_outlined,
                 color: Colors.blue,
                 route: RouteNames.adminProductList,
+                isDark: isDark,
               ),
               const SizedBox(height: 12),
               _buildFeatureCard(
@@ -256,6 +272,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 icon: Icons.receipt_long_outlined,
                 color: Colors.orange,
                 route: RouteNames.adminOrderList,
+                isDark: isDark,
               ),
               const SizedBox(height: 12),
               _buildFeatureCard(
@@ -264,6 +281,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 icon: Icons.local_offer_outlined,
                 color: Colors.pink,
                 route: RouteNames.adminVoucher,
+                isDark: isDark,
               ),
               const SizedBox(height: 12),
               _buildFeatureCard(
@@ -272,6 +290,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 icon: Icons.analytics_outlined,
                 color: Colors.deepPurple,
                 route: RouteNames.adminReport,
+                isDark: isDark,
               ),
               const SizedBox(height: 100),
             ],

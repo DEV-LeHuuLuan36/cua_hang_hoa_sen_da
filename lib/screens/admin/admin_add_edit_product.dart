@@ -5,11 +5,12 @@ import '../../models/product/succulent.dart';
 import '../../models/enums/product_status.dart';
 import '../../providers/product_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/theme_helper.dart';
 import '../../widgets/common/custom_text_field.dart';
 import '../../widgets/common/custom_button.dart';
 
 class AdminAddEditProductScreen extends StatefulWidget {
-  final String? productId; // Nếu null => Thêm mới. Có ID => Cập nhật
+  final String? productId;
 
   const AdminAddEditProductScreen({Key? key, this.productId}) : super(key: key);
 
@@ -23,7 +24,6 @@ class _AdminAddEditProductScreenState extends State<AdminAddEditProductScreen> {
   final _stockController = TextEditingController();
   final _descController = TextEditingController();
 
-  // Biến cờ kiểm tra xem đang Thêm hay Sửa
   bool get isEditing => widget.productId != null;
   Succulent? _editingProduct;
 
@@ -72,9 +72,13 @@ class _AdminAddEditProductScreenState extends State<AdminAddEditProductScreen> {
   }
 
   void _handleSave() async {
-    // 1. Kiểm tra Validate
     if (_nameController.text.isEmpty || _priceController.text.isEmpty || _stockController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng nhập đủ Tên, Giá và Tồn kho!'), backgroundColor: AppColors.error));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Vui lòng nhập đủ Tên, Giá và Tồn kho!', style: TextStyle(color: Colors.white)),
+          backgroundColor: AppColors.error,
+        ),
+      );
       return;
     }
 
@@ -111,7 +115,6 @@ class _AdminAddEditProductScreenState extends State<AdminAddEditProductScreen> {
       updatedAt: now,
     );
 
-    // 3. Gọi lưu vào Provider
     bool success;
     if (isEditing) {
       success = await productProvider.updateProduct(newProduct);
@@ -119,21 +122,29 @@ class _AdminAddEditProductScreenState extends State<AdminAddEditProductScreen> {
       success = await productProvider.addProduct(newProduct);
     }
 
-    // 4. Chuyển hướng
     if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lưu sản phẩm thành công!'), backgroundColor: AppColors.success));
-      Navigator.pop(context); // Trở về màn hình trước
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lưu sản phẩm thành công!', style: TextStyle(color: Colors.white)),
+          backgroundColor: AppColors.success,
+        ),
+      );
+      Navigator.pop(context);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isLoading = context.watch<ProductProvider>().isLoading;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: ThemeHelper.background(context),
       appBar: AppBar(
-        title: Text(isEditing ? 'Sửa Sản Phẩm' : 'Thêm Sản Phẩm Mới', style: const TextStyle(color: Colors.white)),
+        title: Text(
+          isEditing ? 'Sửa Sản Phẩm' : 'Thêm Sản Phẩm Mới',
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: AppColors.primary,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
@@ -141,10 +152,12 @@ class _AdminAddEditProductScreenState extends State<AdminAddEditProductScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Cụm nhập thông tin
             Container(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+              decoration: BoxDecoration(
+                color: ThemeHelper.surface(context),
+                borderRadius: BorderRadius.circular(16),
+              ),
               child: Column(
                 children: [
                   CustomTextField(
@@ -173,18 +186,18 @@ class _AdminAddEditProductScreenState extends State<AdminAddEditProductScreen> {
                   TextField(
                     controller: _descController,
                     maxLines: 4,
+                    style: TextStyle(color: ThemeHelper.textPrimary(context)),
                     decoration: InputDecoration(
                       labelText: 'Mô tả chi tiết',
                       alignLabelWithHint: true,
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      labelStyle: TextStyle(color: ThemeHelper.textSecondary(context)),
                     ),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 24),
-
-            // Nút Lưu
             CustomButton(
               text: 'LƯU SẢN PHẨM',
               isLoading: isLoading,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/product/succulent.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/theme_helper.dart';
 import '../../providers/favorite_provider.dart';
 import '../../providers/auth_provider.dart';
 import 'pressable_scale.dart';
@@ -22,37 +23,34 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Gọi Provider để theo dõi trạng thái yêu thích
     final favoriteProvider = context.watch<FavoriteProvider>();
     final authProvider = context.read<AuthProvider>();
-
-    // Kiểm tra xem sản phẩm này có đang nằm trong danh sách yêu thích không
     final isLiked = favoriteProvider.isFavorite(product.id);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final card = Card(
       elevation: 2,
+      color: ThemeHelper.surface(context),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: ThemeHelper.surface(context),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Sử dụng Stack để đè nút tim lên hình ảnh
               Expanded(
                 child: Stack(
                   children: [
-                    // 1. Ảnh sản phẩm hoặc Placeholder
                     Container(
                       width: double.infinity,
-                      decoration: const BoxDecoration(
-                        color: AppColors.background,
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                      decoration: BoxDecoration(
+                        color: isDark ? AppColors.darkCard : AppColors.background,
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
                       ),
                       child: ClipRRect(
                         borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
@@ -63,22 +61,28 @@ class ProductCard extends StatelessWidget {
                                 width: double.infinity,
                                 height: double.infinity,
                                 errorBuilder: (context, error, stackTrace) => Container(
-                                  color: Colors.grey[300],
-                                  child: const Center(
-                                    child: Icon(Icons.image, size: 40, color: Colors.grey),
+                                  color: isDark ? AppColors.darkBorder : Colors.grey[300],
+                                  child: Center(
+                                    child: Icon(
+                                      Icons.image,
+                                      size: 40,
+                                      color: isDark ? AppColors.darkTextSecondary : Colors.grey,
+                                    ),
                                   ),
                                 ),
                               )
                             : Container(
-                                color: Colors.grey[300],
-                                child: const Center(
-                                  child: Icon(Icons.image, size: 40, color: Colors.grey),
+                                color: isDark ? AppColors.darkBorder : Colors.grey[300],
+                                child: Center(
+                                  child: Icon(
+                                    Icons.image,
+                                    size: 40,
+                                    color: isDark ? AppColors.darkTextSecondary : Colors.grey,
+                                  ),
                                 ),
                               ),
                       ),
                     ),
-
-                    // 2. Nút Thả tim góc phải trên
                     Positioned(
                       top: 8,
                       right: 8,
@@ -86,11 +90,12 @@ class ProductCard extends StatelessWidget {
                         onTap: () {
                           final userId = authProvider.currentUser?.id;
                           if (userId != null) {
-                            // Gọi hàm thêm/xóa khỏi Wishlist
                             favoriteProvider.toggleFavorite(userId, product);
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Vui lòng đăng nhập để lưu yêu thích!')),
+                              SnackBar(
+                                content: Text('Vui lòng đăng nhập để lưu yêu thích!', style: TextStyle(color: Colors.white)),
+                              ),
                             );
                           }
                         },
@@ -115,7 +120,6 @@ class ProductCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    // 3. Nhãn HẾT HÀNG
                     if (product.stock <= 0)
                       Positioned(
                         top: 8,
@@ -139,8 +143,6 @@ class ProductCard extends StatelessWidget {
                   ],
                 ),
               ),
-
-              // Thông tin sản phẩm
               Padding(
                 padding: const EdgeInsets.all(12.0),
                 child: Column(
@@ -148,7 +150,11 @@ class ProductCard extends StatelessWidget {
                   children: [
                     Text(
                       product.name,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: ThemeHelper.textPrimary(context),
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),

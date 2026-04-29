@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../models/product/succulent.dart';
 import '../../providers/product_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/theme_helper.dart';
 import '../../utils/constants/route_names.dart';
 import '../../widgets/common/pressable_scale.dart';
 import '../../widgets/common/shimmer_box.dart';
@@ -54,34 +55,46 @@ class _AdminProductScreenState extends State<AdminProductScreen> {
     context.read<ProductProvider>().clearFilters();
   }
 
-  Future<void> _showQuickUpdateDialog(Succulent product) async {
+  Future<void> _showQuickUpdateDialog(Succulent product, bool isDark) async {
     final priceController = TextEditingController(text: product.price.toStringAsFixed(0));
     final stockController = TextEditingController(text: product.stock.toString());
 
     final shouldSave = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Sửa nhanh giá và tồn kho'),
+        backgroundColor: isDark ? AppColors.darkCard : Colors.white,
+        title: Text(
+          'Sửa nhanh giá và tồn kho',
+          style: TextStyle(color: ThemeHelper.textPrimary(context)),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: priceController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Giá (VNĐ)'),
+              style: TextStyle(color: ThemeHelper.textPrimary(context)),
+              decoration: InputDecoration(
+                labelText: 'Giá (VNĐ)',
+                labelStyle: TextStyle(color: ThemeHelper.textSecondary(context)),
+              ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: stockController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Tồn kho'),
+              style: TextStyle(color: ThemeHelper.textPrimary(context)),
+              decoration: InputDecoration(
+                labelText: 'Tồn kho',
+                labelStyle: TextStyle(color: ThemeHelper.textSecondary(context)),
+              ),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Hủy'),
+            child: Text('Hủy', style: TextStyle(color: ThemeHelper.textSecondary(context))),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
@@ -130,15 +143,19 @@ class _AdminProductScreenState extends State<AdminProductScreen> {
     );
   }
 
-  Future<void> _deleteProduct(String productId) async {
+  Future<void> _deleteProduct(String productId, bool isDark) async {
     HapticFeedback.lightImpact();
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Xóa sản phẩm'),
-        content: const Text('Bạn có chắc chắn muốn xóa sản phẩm này không?'),
+        backgroundColor: isDark ? AppColors.darkCard : Colors.white,
+        title: Text('Xóa sản phẩm', style: TextStyle(color: ThemeHelper.textPrimary(context))),
+        content: Text('Bạn có chắc chắn muốn xóa sản phẩm này không?', style: TextStyle(color: ThemeHelper.textSecondary(context))),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Hủy')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('Hủy', style: TextStyle(color: ThemeHelper.textSecondary(context))),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             onPressed: () => Navigator.pop(context, true),
@@ -161,6 +178,7 @@ class _AdminProductScreenState extends State<AdminProductScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final productProvider = context.watch<ProductProvider>();
     final products = productProvider.products;
     final categories = productProvider.categories;
@@ -168,7 +186,7 @@ class _AdminProductScreenState extends State<AdminProductScreen> {
     final hasActiveFilter = productProvider.searchQuery.isNotEmpty || selectedCategoryId != null;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: ThemeHelper.background(context),
       appBar: AppBar(
         title: const Text('Quản lý Sản phẩm', style: TextStyle(color: Colors.white)),
         backgroundColor: AppColors.primaryDark,
@@ -179,22 +197,23 @@ class _AdminProductScreenState extends State<AdminProductScreen> {
           // ─── Thanh Search ───
           Container(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            color: AppColors.surface,
+            color: ThemeHelper.surface(context),
             child: TextField(
               controller: _searchController,
               onChanged: _onSearchChanged,
+              style: TextStyle(color: ThemeHelper.textPrimary(context)),
               decoration: InputDecoration(
                 hintText: 'Tìm kiếm sản phẩm...',
-                hintStyle: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.7)),
-                prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
+                hintStyle: TextStyle(color: ThemeHelper.textSecondary(context).withValues(alpha: 0.7)),
+                prefixIcon: Icon(Icons.search, color: ThemeHelper.icon(context)),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear_rounded, color: AppColors.textSecondary),
+                        icon: Icon(Icons.clear_rounded, color: ThemeHelper.icon(context)),
                         onPressed: _clearSearch,
                       )
                     : null,
                 filled: true,
-                fillColor: AppColors.background,
+                fillColor: ThemeHelper.background(context),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -202,7 +221,7 @@ class _AdminProductScreenState extends State<AdminProductScreen> {
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppColors.textSecondary.withValues(alpha: 0.15)),
+                  borderSide: BorderSide(color: ThemeHelper.divider(context)),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -214,8 +233,8 @@ class _AdminProductScreenState extends State<AdminProductScreen> {
 
           // ─── Filter Chips danh mục ───
           Container(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-            color: AppColors.surface,
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 5),
+            color: ThemeHelper.surface(context),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -224,19 +243,19 @@ class _AdminProductScreenState extends State<AdminProductScreen> {
                   child: ListView(
                     scrollDirection: Axis.horizontal,
                     children: [
-                      // Chip "Tất cả"
                       _CategoryChip(
                         label: 'Tất cả',
                         isSelected: selectedCategoryId == null,
+                        isDark: isDark,
                         onTap: () => _onCategorySelected(null),
                       ),
                       const SizedBox(width: 8),
-                      // Chips danh mục từ DB
                       ...categories.map((cat) => Padding(
                             padding: const EdgeInsets.only(right: 8),
                             child: _CategoryChip(
                               label: cat.name,
                               isSelected: selectedCategoryId == cat.id,
+                              isDark: isDark,
                               onTap: () => _onCategorySelected(cat.id),
                             ),
                           )),
@@ -264,7 +283,7 @@ class _AdminProductScreenState extends State<AdminProductScreen> {
           ),
 
           // ─── Divider ───
-          Container(height: 1, color: AppColors.background),
+          Container(height: 1, color: ThemeHelper.divider(context)),
 
           // ─── Danh sách sản phẩm ───
           Expanded(
@@ -282,7 +301,7 @@ class _AdminProductScreenState extends State<AdminProductScreen> {
                     switchInCurve: Curves.fastOutSlowIn,
                     switchOutCurve: Curves.fastOutSlowIn,
                     child: products.isEmpty
-                        ? _EmptyState(hasFilter: hasActiveFilter)
+                        ? _EmptyState(hasFilter: hasActiveFilter, isDark: isDark)
                         : ListView.builder(
                             key: ValueKey(products.length),
                             padding: const EdgeInsets.all(16),
@@ -292,13 +311,14 @@ class _AdminProductScreenState extends State<AdminProductScreen> {
                               return _ProductTile(
                                 key: ValueKey(p.id),
                                 product: p,
-                                onQuickEdit: () => _showQuickUpdateDialog(p),
+                                isDark: isDark,
+                                onQuickEdit: () => _showQuickUpdateDialog(p, isDark),
                                 onEdit: () => Navigator.pushNamed(
                                   context,
                                   RouteNames.adminAddEditProduct,
                                   arguments: p.id,
                                 ),
-                                onDelete: () => _deleteProduct(p.id),
+                                onDelete: () => _deleteProduct(p.id, isDark),
                               );
                             },
                           ),
@@ -318,17 +338,16 @@ class _AdminProductScreenState extends State<AdminProductScreen> {
   }
 }
 
-// ─────────────────────────────────────────────
-// Widget con: Chip danh mục
-// ─────────────────────────────────────────────
 class _CategoryChip extends StatelessWidget {
   final String label;
   final bool isSelected;
+  final bool isDark;
   final VoidCallback onTap;
 
   const _CategoryChip({
     required this.label,
     required this.isSelected,
+    required this.isDark,
     required this.onTap,
   });
 
@@ -343,10 +362,10 @@ class _CategoryChip extends StatelessWidget {
           curve: Curves.easeInOut,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.primary : AppColors.background,
+            color: isSelected ? AppColors.primary : ThemeHelper.background(context),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: isSelected ? AppColors.primary : AppColors.textSecondary.withValues(alpha: 0.3),
+              color: isSelected ? AppColors.primary : ThemeHelper.divider(context),
               width: 1,
             ),
           ),
@@ -355,7 +374,7 @@ class _CategoryChip extends StatelessWidget {
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: isSelected ? Colors.white : AppColors.textPrimary,
+              color: isSelected ? Colors.white : ThemeHelper.textPrimary(context),
             ),
           ),
         ),
@@ -364,11 +383,9 @@ class _CategoryChip extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────
-// Widget con: Dòng sản phẩm
-// ─────────────────────────────────────────────
 class _ProductTile extends StatelessWidget {
   final Succulent product;
+  final bool isDark;
   final VoidCallback onQuickEdit;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
@@ -376,6 +393,7 @@ class _ProductTile extends StatelessWidget {
   const _ProductTile({
     required super.key,
     required this.product,
+    required this.isDark,
     required this.onQuickEdit,
     required this.onEdit,
     required this.onDelete,
@@ -386,11 +404,11 @@ class _ProductTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: ThemeHelper.surface(context),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: AppColors.textPrimary.withValues(alpha: 0.06),
+            color: (isDark ? Colors.black : AppColors.textPrimary).withValues(alpha: 0.06),
             blurRadius: 10,
             offset: const Offset(0, 6),
           ),
@@ -409,34 +427,27 @@ class _ProductTile extends StatelessWidget {
         ),
         title: Text(
           product.name,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold, color: ThemeHelper.textPrimary(context)),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
         subtitle: Text(
           'Giá: ${product.price.toInt()} VNĐ  |  Kho: ${product.stock}',
-          style: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.85)),
+          style: TextStyle(color: ThemeHelper.textSecondary(context).withValues(alpha: 0.85)),
         ),
         trailing: PressableScale(
           pressedScale: 0.92,
           child: PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: AppColors.textSecondary),
+            icon: Icon(Icons.more_vert, color: ThemeHelper.icon(context)),
             onSelected: (value) {
-              if (value == 'quick') {
-                onQuickEdit();
-              } else if (value == 'edit') {
-                onEdit();
-              } else if (value == 'delete') {
-                onDelete();
-              }
+              if (value == 'quick') onQuickEdit();
+              else if (value == 'edit') onEdit();
+              else if (value == 'delete') onDelete();
             },
             itemBuilder: (_) => [
               const PopupMenuItem(value: 'quick', child: Text('Sửa nhanh giá/tồn')),
               const PopupMenuItem(value: 'edit', child: Text('Mở form chỉnh sửa')),
-              PopupMenuItem(
-                value: 'delete',
-                child: Text('Xóa sản phẩm', style: TextStyle(color: AppColors.error)),
-              ),
+              PopupMenuItem(value: 'delete', child: Text('Xóa sản phẩm', style: TextStyle(color: AppColors.error))),
             ],
           ),
         ),
@@ -445,13 +456,11 @@ class _ProductTile extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────
-// Widget con: Empty state
-// ─────────────────────────────────────────────
 class _EmptyState extends StatelessWidget {
   final bool hasFilter;
+  final bool isDark;
 
-  const _EmptyState({required this.hasFilter});
+  const _EmptyState({required this.hasFilter, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
@@ -463,13 +472,13 @@ class _EmptyState extends StatelessWidget {
           Icon(
             hasFilter ? Icons.search_off_rounded : Icons.inventory_2_outlined,
             size: 64,
-            color: Colors.grey.shade300,
+            color: isDark ? AppColors.darkBorder : Colors.grey[300],
           ),
           const SizedBox(height: 16),
           Text(
             hasFilter ? 'Không tìm thấy sản phẩm nào!' : 'Chưa có sản phẩm nào.\nHãy bấm dấu + để thêm.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey.shade500, height: 1.5),
+            style: TextStyle(color: isDark ? AppColors.darkTextSecondary : Colors.grey[500], height: 1.5),
           ),
         ],
       ),

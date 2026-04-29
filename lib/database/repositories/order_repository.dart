@@ -62,8 +62,8 @@ class OrderRepository {
     return await orderDao.getOrderById(orderId);
   }
 
-  // Lấy danh sách item của đơn hàng
-  Future<List<Map<String, dynamic>>> getOrderItems(String orderId) async {
-    return await orderDao.getOrderItems(orderId);
+  // Lấy danh sách item của đơn hàng (có filter theo is_reviewed)
+  Future<List<Map<String, dynamic>>> getOrderItems(String orderId, {bool? isReviewed}) async {
+    return await orderDao.getOrderItems(orderId, isReviewed: isReviewed);
   }
 }

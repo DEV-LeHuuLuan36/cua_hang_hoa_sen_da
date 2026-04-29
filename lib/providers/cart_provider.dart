@@ -9,6 +9,7 @@ class CartProvider extends ChangeNotifier {
   Cart? _cart;
   List<CartItem> _cartItems = [];
   bool _isLoading = false;
+  final Set<String> _selectedItemIds = {};
 
   CartProvider({required CartRepository cartRepository})
       : _cartRepository = cartRepository;
@@ -16,9 +17,37 @@ class CartProvider extends ChangeNotifier {
   Cart? get cart => _cart;
   List<CartItem> get cartItems => _cartItems;
   bool get isLoading => _isLoading;
+  Set<String> get selectedItemIds => Set.unmodifiable(_selectedItemIds);
 
   // Tổng số lượng các món trong giỏ (Dùng để hiển thị cục badge đỏ trên icon giỏ hàng)
   int get itemCount => _cartItems.fold(0, (sum, item) => sum + item.quantity);
+
+  // Danh sách items được chọn
+  List<CartItem> get selectedItems =>
+      _cartItems.where((item) => _selectedItemIds.contains(item.id)).toList();
+
+  // Toggle chọn/bỏ chọn 1 item
+  void toggleSelectItem(String cartItemId) {
+    if (_selectedItemIds.contains(cartItemId)) {
+      _selectedItemIds.remove(cartItemId);
+    } else {
+      _selectedItemIds.add(cartItemId);
+    }
+    notifyListeners();
+  }
+
+  // Chọn tất cả
+  void selectAllItems() {
+    _selectedItemIds.clear();
+    _selectedItemIds.addAll(_cartItems.map((e) => e.id));
+    notifyListeners();
+  }
+
+  // Bỏ chọn tất cả
+  void clearSelectedItems() {
+    _selectedItemIds.clear();
+    notifyListeners();
+  }
 
   // 1. Khởi tạo và tải giỏ hàng của User (Gọi sau khi User đăng nhập thành công)
   Future<void> loadCart(String userId) async {
@@ -81,6 +110,9 @@ class CartProvider extends ChangeNotifier {
 
   // 4. Xóa 1 sản phẩm khỏi giỏ (Icon thùng rác)
   Future<void> removeItem(String itemId) async {
+    // Xóa khỏi selection nếu đang được chọn
+    _selectedItemIds.remove(itemId);
+
     final success = await _cartRepository.removeCartItem(itemId);
     if (success && _cart != null) {
       _cartItems = await _cartRepository.getCartItems(_cart!.id);
@@ -94,6 +126,7 @@ class CartProvider extends ChangeNotifier {
       final success = await _cartRepository.clearCart(_cart!.id);
       if (success) {
         _cartItems.clear();
+        _selectedItemIds.clear();
         notifyListeners();
       }
     }

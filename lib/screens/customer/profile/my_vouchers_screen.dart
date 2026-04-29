@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../../theme/app_colors.dart';
 import '../../../database/daos/voucher_dao.dart';
@@ -37,52 +38,43 @@ class _MyVouchersScreenState extends State<MyVouchersScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: colorScheme.surfaceContainerLowest,
       appBar: AppBar(
-        title: const Text('Kho Voucher'),
-        backgroundColor: AppColors.surface,
+        title: Text('Kho Voucher', style: TextStyle(color: colorScheme.onSurface, fontWeight: FontWeight.w700)),
+        backgroundColor: colorScheme.surface,
         elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
-        titleTextStyle: const TextStyle(
-          color: AppColors.textPrimary,
-          fontWeight: FontWeight.w700,
-          fontSize: 18,
-        ),
+        surfaceTintColor: Colors.transparent,
+        iconTheme: IconThemeData(color: colorScheme.onSurface),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator(color: AppColors.primary))
           : _vouchers.isEmpty
-              ? _buildEmptyState()
-              : _buildVoucherList(),
+              ? _buildEmptyState(context)
+              : _buildVoucherList(context),
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.local_offer_outlined,
-            size: 80,
-            color: Colors.grey[300],
-          ),
+          Icon(Icons.local_offer_outlined, size: 80, color: colorScheme.outlineVariant),
           const SizedBox(height: 16),
           Text(
             'Chưa có voucher nào',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[500],
-              fontWeight: FontWeight.w500,
-            ),
+            style: TextStyle(fontSize: 16, color: colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildVoucherList() {
+  Widget _buildVoucherList(BuildContext context) {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: _vouchers.length,
@@ -90,13 +82,14 @@ class _MyVouchersScreenState extends State<MyVouchersScreen> {
         final voucher = _vouchers[index];
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),
-          child: _buildVoucherCard(voucher),
+          child: _buildVoucherCard(context, voucher),
         );
       },
     );
   }
 
-  Widget _buildVoucherCard(Map<String, dynamic> voucher) {
+  Widget _buildVoucherCard(BuildContext context, Map<String, dynamic> voucher) {
+    final colorScheme = Theme.of(context).colorScheme;
     final voucherType = voucher[VoucherContract.colVoucherType] ?? 'discount';
     final discountType = voucher[VoucherContract.colDiscountType] ?? '';
     final discountValue = (voucher[VoucherContract.colDiscountValue] as num?)?.toDouble() ?? 0;
@@ -112,14 +105,13 @@ class _MyVouchersScreenState extends State<MyVouchersScreen> {
     final isExpired = !isNoExpiry && DateTime.now().millisecondsSinceEpoch > endDate;
     final isDisabled = isUsageExhausted || isExpired;
 
-    // Gradient colors based on voucher type
     final gradientColors = _getGradientColors(voucherType);
 
     return Opacity(
       opacity: isDisabled ? 0.5 : 1.0,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
@@ -128,13 +120,10 @@ class _MyVouchersScreenState extends State<MyVouchersScreen> {
               offset: const Offset(0, 4),
             ),
           ],
-          border: isDisabled
-              ? Border.all(color: Colors.grey[300]!, width: 1.5)
-              : null,
+          border: isDisabled ? Border.all(color: colorScheme.outlineVariant, width: 1.5) : null,
         ),
         child: Row(
           children: [
-            // Left side - Discount info
             Container(
               width: 90,
               padding: const EdgeInsets.all(12),
@@ -159,25 +148,16 @@ class _MyVouchersScreenState extends State<MyVouchersScreen> {
                       discountType == 'percent'
                           ? '${discountValue.toInt()}%'
                           : '${(discountValue / 1000).toStringAsFixed(0)}K',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
-                      ),
+                      style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900),
                     ),
                   const SizedBox(height: 2),
                   Text(
                     voucherType == 'shipping' ? 'SHIP' : 'GIẢM',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600),
                   ),
                 ],
               ),
             ),
-            // Right side - Details
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(12),
@@ -217,11 +197,7 @@ class _MyVouchersScreenState extends State<MyVouchersScreen> {
                               ),
                               child: const Text(
                                 'HẾT LƯỢT',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w700,
-                                ),
+                                style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
@@ -238,11 +214,7 @@ class _MyVouchersScreenState extends State<MyVouchersScreen> {
                               ),
                               child: const Text(
                                 'HẾT HẠN',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w700,
-                                ),
+                                style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
@@ -253,39 +225,28 @@ class _MyVouchersScreenState extends State<MyVouchersScreen> {
                     const SizedBox(height: 6),
                     Text(
                       name,
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: TextStyle(color: colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w700),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 2),
                     Text(
                       description,
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 11,
-                      ),
+                      style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 11),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        Icon(
-                          Icons.calendar_today,
-                          size: 11,
-                          color: isExpired ? AppColors.error : Colors.grey[500],
-                        ),
+                        Icon(Icons.calendar_today, size: 11, color: isExpired ? AppColors.error : colorScheme.onSurfaceVariant),
                         const SizedBox(width: 4),
                         Text(
                           isNoExpiry
                               ? 'Không thời hạn'
                               : 'HSD: ${DateFormat('dd/MM/yyyy').format(DateTime.fromMillisecondsSinceEpoch(endDate))}',
                           style: TextStyle(
-                            color: isExpired ? AppColors.error : Colors.grey[500],
+                            color: isExpired ? AppColors.error : colorScheme.onSurfaceVariant,
                             fontSize: 10,
                             fontWeight: FontWeight.w500,
                           ),
@@ -296,14 +257,11 @@ class _MyVouchersScreenState extends State<MyVouchersScreen> {
                       const SizedBox(height: 2),
                       Row(
                         children: [
-                          Icon(Icons.shopping_cart, size: 11, color: Colors.grey[500]),
+                          Icon(Icons.shopping_cart, size: 11, color: colorScheme.onSurfaceVariant),
                           const SizedBox(width: 4),
                           Text(
                             'Tối thiểu: ${_formatMoney(minOrder)}',
-                            style: TextStyle(
-                              color: Colors.grey[500],
-                              fontSize: 10,
-                            ),
+                            style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 10),
                           ),
                         ],
                       ),
@@ -312,7 +270,6 @@ class _MyVouchersScreenState extends State<MyVouchersScreen> {
                 ),
               ),
             ),
-            // Action button
             Padding(
               padding: const EdgeInsets.only(right: 12),
               child: ElevatedButton(
@@ -326,20 +283,12 @@ class _MyVouchersScreenState extends State<MyVouchersScreen> {
                   backgroundColor: voucherType == 'shipping' ? Colors.blue : AppColors.primary,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   elevation: 0,
-                  disabledBackgroundColor: Colors.grey[300],
-                  disabledForegroundColor: Colors.grey[500],
+                  disabledBackgroundColor: colorScheme.surfaceContainerHighest,
+                  disabledForegroundColor: colorScheme.onSurfaceVariant,
                 ),
-                child: const Text(
-                  'Dùng ngay',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+                child: const Text('Dùng ngay', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
               ),
             ),
           ],
@@ -351,10 +300,8 @@ class _MyVouchersScreenState extends State<MyVouchersScreen> {
   List<Color> _getGradientColors(String type) {
     switch (type) {
       case 'shipping':
-        // Màu xanh cho Freeship
         return [const Color(0xFF3498db), const Color(0xFF2980b9)];
       case 'discount':
-        // Màu cam/đỏ cho Giảm giá
         return [const Color(0xFFe67e22), const Color(0xFFd35400)];
       default:
         return [AppColors.primary, AppColors.primaryDark];

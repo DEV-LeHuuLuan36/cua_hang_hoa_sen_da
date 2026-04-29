@@ -6,6 +6,7 @@ import '../../../providers/product_provider.dart';
 
 import '../../../providers/auth_provider.dart';
 import '../../../theme/app_colors.dart';
+import '../../../utils/theme_helper.dart';
 import '../cart/cart_screen.dart';
 import '../profile/profile_screen.dart';
 
@@ -36,13 +37,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: ThemeHelper.background(context),
       body: _screens[_selectedIndex], // Hiển thị nội dung tương ứng với tab được chọn
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         selectedItemColor: AppColors.primary,
-        unselectedItemColor: Colors.grey,
+        unselectedItemColor: ThemeHelper.icon(context),
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,
         elevation: 8,
@@ -90,6 +93,7 @@ class _HomeContentState extends State<HomeContent> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final user = context.watch<AuthProvider>().currentUser;
     final displayName = user?.fullName ?? 'Khách hàng';
 
@@ -110,8 +114,8 @@ class _HomeContentState extends State<HomeContent> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Chào buổi sáng,', style: TextStyle(fontSize: 14, color: AppColors.textSecondary)),
-                    Text(displayName, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.primaryDark)),
+                    Text('Chào buổi sáng,', style: TextStyle(fontSize: 14, color: ThemeHelper.textSecondary(context))),
+                    Text(displayName, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: isDark ? AppColors.primary : AppColors.primaryDark)),
                   ],
                 ),
                 Row(
@@ -124,11 +128,11 @@ class _HomeContentState extends State<HomeContent> {
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: ThemeHelper.surface(context),
                           shape: BoxShape.circle,
                           boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)],
                         ),
-                        child: const Icon(Icons.local_offer_outlined, color: AppColors.primaryDark),
+                        child: Icon(Icons.local_offer_outlined, color: isDark ? AppColors.primary : AppColors.primaryDark),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -140,11 +144,11 @@ class _HomeContentState extends State<HomeContent> {
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: ThemeHelper.surface(context),
                           shape: BoxShape.circle,
                           boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)],
                         ),
-                        child: const Icon(Icons.notifications_outlined, color: AppColors.primaryDark),
+                        child: Icon(Icons.notifications_outlined, color: isDark ? AppColors.primary : AppColors.primaryDark),
                       ),
                     ),
                   ],
@@ -177,7 +181,7 @@ class _HomeContentState extends State<HomeContent> {
             ),
             const SizedBox(height: 32),
 
-            const Text('Sản phẩm mới nhất', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+            Text('Sản phẩm mới nhất', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: ThemeHelper.textPrimary(context))),
             const SizedBox(height: 16),
 
             // KHI TẢI XONG: Kiểm tra nếu trống thì báo, có thì vẽ GridView
@@ -188,11 +192,11 @@ class _HomeContentState extends State<HomeContent> {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 32.0),
                   child: Column(
-                    children: const [
-                      Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey),
-                      SizedBox(height: 16),
+                    children: [
+                      Icon(Icons.inventory_2_outlined, size: 64, color: ThemeHelper.textSecondary(context)),
+                      const SizedBox(height: 16),
                       Text('Chưa có sản phẩm nào trong cửa hàng.\nVui lòng vào mục Quản trị (Admin) để thêm SP.',
-                          textAlign: TextAlign.center, style: TextStyle(color: Colors.grey, height: 1.5)),
+                          textAlign: TextAlign.center, style: TextStyle(color: ThemeHelper.textSecondary(context), height: 1.5)),
                     ],
                   ),
                 ),
@@ -218,7 +222,7 @@ class _HomeContentState extends State<HomeContent> {
                       borderRadius: BorderRadius.circular(18),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.textPrimary.withValues(alpha: 0.08),
+                          color: ThemeHelper.textPrimary(context).withValues(alpha: 0.08),
                           blurRadius: 14,
                           offset: const Offset(0, 8),
                         ),

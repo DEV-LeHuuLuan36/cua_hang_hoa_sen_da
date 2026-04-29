@@ -23,13 +23,14 @@ class RecentlyViewedDao {
     }
   }
 
-  // Lấy 20 sản phẩm xem gần nhất (JOIN với products)
+  // Lấy 20 sản phẩm xem gần nhất (JOIN với products và product_images)
   Future<List<Map<String, dynamic>>> getRecentlyViewed(String userId) async {
     final database = await db;
     return await database.rawQuery('''
-      SELECT p.*, r.viewed_at 
+      SELECT p.*, r.viewed_at, pi.image_url as primary_image
       FROM recently_viewed r
       JOIN products p ON r.product_id = p.id
+      LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_primary = 1
       WHERE r.user_id = ?
       ORDER BY r.viewed_at DESC
       LIMIT 20

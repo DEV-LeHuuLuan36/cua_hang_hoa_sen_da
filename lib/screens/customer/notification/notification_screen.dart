@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../database/daos/notification_dao.dart';
 import '../../../theme/app_colors.dart';
+import '../../../utils/theme_helper.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({Key? key}) : super(key: key);
@@ -96,8 +97,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: ThemeHelper.background(context),
       appBar: AppBar(
         title: const Text('Thông báo', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: AppColors.primaryDark,
@@ -112,15 +115,15 @@ class _NotificationScreenState extends State<NotificationScreen> {
       ),
       body: SafeArea(
         child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
+            ? Center(child: CircularProgressIndicator(color: isDark ? AppColors.primary : AppColors.primary))
             : _notifications.isEmpty
-                ? _buildEmptyState()
-                : _buildNotificationList(),
+                ? _buildEmptyState(isDark)
+                : _buildNotificationList(isDark),
       ),
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(bool isDark) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -128,14 +131,14 @@ class _NotificationScreenState extends State<NotificationScreen> {
           Icon(
             Icons.notifications_none_rounded,
             size: 80,
-            color: Colors.grey.shade300,
+            color: isDark ? AppColors.darkBorder : Colors.grey[300],
           ),
           const SizedBox(height: 16),
           Text(
             'Chưa có thông báo nào',
             style: TextStyle(
               fontSize: 16,
-              color: Colors.grey.shade500,
+              color: isDark ? AppColors.darkTextSecondary : Colors.grey[500],
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -144,7 +147,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
             'Các thông báo sẽ xuất hiện ở đây',
             style: TextStyle(
               fontSize: 13,
-              color: Colors.grey.shade400,
+              color: isDark ? AppColors.darkTextSecondary : Colors.grey[400],
             ),
           ),
         ],
@@ -152,7 +155,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     );
   }
 
-  Widget _buildNotificationList() {
+  Widget _buildNotificationList(bool isDark) {
     return RefreshIndicator(
       onRefresh: _loadNotifications,
       child: ListView.builder(
@@ -171,7 +174,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
             background: Container(
               alignment: Alignment.centerRight,
               padding: const EdgeInsets.only(right: 20),
-              color: Colors.red,
+              color: AppColors.error,
               child: const Icon(Icons.delete, color: Colors.white),
             ),
             onDismissed: (_) => _deleteNotification(notification['id'] as String),
@@ -184,9 +187,13 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
-                    color: isRead ? Colors.transparent : AppColors.primary.withValues(alpha: 0.05),
+                    color: isRead 
+                        ? Colors.transparent 
+                        : AppColors.primary.withValues(alpha: 0.05),
                     border: Border(
-                      bottom: BorderSide(color: Colors.grey.shade200),
+                      bottom: BorderSide(
+                        color: isDark ? AppColors.darkBorder : Colors.grey.shade200,
+                      ),
                     ),
                   ),
                   child: Row(
@@ -213,7 +220,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                     style: TextStyle(
                                       fontSize: 15,
                                       fontWeight: isRead ? FontWeight.w500 : FontWeight.bold,
-                                      color: AppColors.textPrimary,
+                                      color: ThemeHelper.textPrimary(context),
                                     ),
                                   ),
                                 ),
@@ -233,7 +240,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                               notification['body'] as String? ?? '',
                               style: TextStyle(
                                 fontSize: 13,
-                                color: AppColors.textSecondary,
+                                color: ThemeHelper.textSecondary(context),
                               ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
@@ -243,7 +250,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                               _formatTime(notification['created_at'] as int),
                               style: TextStyle(
                                 fontSize: 11,
-                                color: Colors.grey.shade500,
+                                color: isDark ? AppColors.darkTextSecondary : Colors.grey.shade500,
                               ),
                             ),
                           ],

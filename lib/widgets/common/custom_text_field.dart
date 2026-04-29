@@ -25,9 +25,11 @@ class CustomTextField extends StatelessWidget {
       controller: controller,
       obscureText: isPassword,
       keyboardType: keyboardType,
+      style: const TextStyle(color: Colors.black87),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
+        hintStyle: TextStyle(color: Colors.grey.shade500),
         prefixIcon: Icon(prefixIcon, color: AppColors.primary),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

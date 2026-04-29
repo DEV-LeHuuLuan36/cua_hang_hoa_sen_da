@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../theme/app_colors.dart';
+import '../../../utils/theme_helper.dart';
 import '../../../providers/favorite_provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../widgets/common/product_card.dart';
@@ -16,7 +17,6 @@ class _WishlistScreenState extends State<WishlistScreen> {
   @override
   void initState() {
     super.initState();
-    // Tải danh sách yêu thích ngay khi mở trang
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final userId = context.read<AuthProvider>().currentUser?.id;
       if (userId != null) {
@@ -27,18 +27,23 @@ class _WishlistScreenState extends State<WishlistScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: ThemeHelper.background(context),
       appBar: AppBar(
-        title: const Text('Sản phẩm yêu thích', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
+        title: Text(
+          'Sản phẩm yêu thích',
+          style: TextStyle(color: ThemeHelper.textPrimary(context), fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: ThemeHelper.surface(context),
         elevation: 0.5,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        iconTheme: IconThemeData(color: ThemeHelper.textPrimary(context)),
       ),
       body: Consumer<FavoriteProvider>(
         builder: (context, favProvider, child) {
           if (favProvider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return Center(child: CircularProgressIndicator(color: isDark ? AppColors.primary : AppColors.primary));
           }
 
           if (favProvider.favoriteProducts.isEmpty) {
@@ -46,9 +51,18 @@ class _WishlistScreenState extends State<WishlistScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.favorite_border, size: 80, color: Colors.grey.shade300),
+                  Icon(
+                    Icons.favorite_border,
+                    size: 80,
+                    color: isDark ? AppColors.darkBorder : Colors.grey[300],
+                  ),
                   const SizedBox(height: 16),
-                  const Text('Danh sách yêu thích trống', style: TextStyle(color: Colors.grey)),
+                  Text(
+                    'Danh sách yêu thích trống',
+                    style: TextStyle(
+                      color: isDark ? AppColors.darkTextSecondary : Colors.grey,
+                    ),
+                  ),
                 ],
               ),
             );

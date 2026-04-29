@@ -103,4 +103,13 @@ class ProductRepository {
     );
     return maps.map((map) => Succulent.fromMap(map)).toList();
   }
+
+  Future<Succulent?> refreshProduct(String productId) async {
+    try {
+      return await _productDao.getProductById(productId);
+    } catch (e) {
+      print("Lỗi refresh sản phẩm: $e");
+      return null;
+    }
+  }
 }

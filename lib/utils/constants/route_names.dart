@@ -21,6 +21,7 @@ class RouteNames {
   static const String recentlyViewed = '/recently-viewed';
   static const String settings = '/settings';
   static const String myReviews = '/my-reviews';
+  static const String allReviews = '/all-reviews';
   static const String notifications = '/notifications';
 
   // Admin

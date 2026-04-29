@@ -171,4 +171,17 @@ class ProductProvider extends ChangeNotifier {
     notifyListeners();
     return success;
   }
+
+  // Cập nhật rating/reviewCount của 1 sản phẩm sau khi user submit review
+  Future<void> refreshProductRating(String productId) async {
+    final updatedProduct = await _productRepository.refreshProduct(productId);
+    if (updatedProduct != null) {
+      final index = _allProducts.indexWhere((p) => p.id == productId);
+      if (index != -1) {
+        _allProducts[index] = updatedProduct;
+        _applyFilters();
+        notifyListeners();
+      }
+    }
+  }
 }

@@ -6,6 +6,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'routes/app_routes.dart';
 import 'utils/constants/route_names.dart';
 import 'services/notification_service.dart';
+import 'theme/app_theme.dart';
 
 // 1. Import DAOs
 import 'database/daos/user_dao.dart';
@@ -15,7 +16,8 @@ import 'database/daos/category_dao.dart';
 import 'database/daos/cart_dao.dart';
 import 'database/daos/order_dao.dart';
 import 'database/daos/recently_viewed_dao.dart';
-import 'database/daos/favorite_dao.dart'; // <-- Bổ sung DAO yêu thích
+import 'database/daos/favorite_dao.dart';
+import 'database/daos/review_dao.dart';
 
 // 2. Import Repositories
 import 'database/repositories/auth_repository.dart';
@@ -31,11 +33,12 @@ import 'providers/product_provider.dart';
 import 'providers/cart_provider.dart';
 import 'providers/order_provider.dart';
 import 'providers/recently_viewed_provider.dart';
-import 'providers/favorite_provider.dart'; // <-- Bổ sung Provider yêu thích
+import 'providers/favorite_provider.dart';
 import 'providers/search_provider.dart';
+import 'providers/theme_provider.dart';
+import 'providers/review_provider.dart';
 
 Future<void> main() async {
-  // Đảm bảo Flutter binding được khởi tạo
   WidgetsFlutterBinding.ensureInitialized();
 
   if (Platform.isWindows || Platform.isLinux) {
@@ -51,7 +54,8 @@ Future<void> main() async {
   final cartDao = CartDao();
   final orderDao = OrderDao();
   final recentlyViewedDao = RecentlyViewedDao();
-  final favoriteDao = FavoriteDao(); // <-- Khởi tạo DAO yêu thích
+  final favoriteDao = FavoriteDao();
+  final reviewDao = ReviewDao();
 
   // KHỞI TẠO REPOSITORIES
   final authRepo = AuthRepository(userDao: userDao);
@@ -68,14 +72,16 @@ Future<void> main() async {
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider.value(value: authProvider),
         ChangeNotifierProvider(create: (_) => UserProvider(userRepository: userRepo)),
         ChangeNotifierProvider(create: (_) => ProductProvider(productRepository: productRepo)),
         ChangeNotifierProvider(create: (_) => CartProvider(cartRepository: cartRepo)),
         ChangeNotifierProvider(create: (_) => OrderProvider(orderRepository: orderRepo)),
         ChangeNotifierProvider(create: (_) => RecentlyViewedProvider(recentlyViewedDao: recentlyViewedDao)),
-        ChangeNotifierProvider(create: (_) => FavoriteProvider(favoriteDao: favoriteDao)), // <-- Khai báo hộ khẩu cho Favorite
+        ChangeNotifierProvider(create: (_) => FavoriteProvider(favoriteDao: favoriteDao)),
         ChangeNotifierProvider(create: (_) => SearchProvider(productRepository: productRepo)),
+        ChangeNotifierProvider(create: (_) => ReviewProvider(reviewDao: reviewDao)),
       ],
       child: const MyApp(),
     ),
@@ -88,16 +94,15 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context, listen: false);
+    final themeProvider = Provider.of<ThemeProvider>(context);
 
     return MaterialApp(
       navigatorKey: NotificationService.navigatorKey,
       title: 'Cửa Hàng Hoa Sen Đá',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        fontFamily: 'Plus Jakarta Sans',
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: themeProvider.themeMode,
       initialRoute: auth.isAuthenticated ? RouteNames.home : RouteNames.login,
       onGenerateRoute: AppRoutes.generateRoute,
     );

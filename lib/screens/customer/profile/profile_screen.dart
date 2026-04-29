@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../theme/app_colors.dart';
+import '../../../utils/theme_helper.dart';
 import '../../../utils/constants/route_names.dart';
 import '../../../providers/order_provider.dart';
 import '../../../providers/auth_provider.dart';
@@ -63,6 +64,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     // 1. Lấy thông tin từ AuthProvider
     final authProvider = context.watch<AuthProvider>();
     final user = authProvider.currentUser;
@@ -102,16 +104,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: ThemeHelper.background(context),
       appBar: AppBar(
-        title: const Text('Hồ sơ cá nhân',
-            style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
+        title: Text('Hồ sơ cá nhân',
+            style: TextStyle(color: ThemeHelper.textPrimary(context), fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
+        automaticallyImplyLeading: false,
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings_outlined, color: AppColors.textPrimary),
+            icon: Icon(Icons.settings_outlined, color: ThemeHelper.textPrimary(context)),
             onPressed: () {
               Navigator.pushNamed(context, RouteNames.settings);
             },
@@ -201,7 +204,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         Text(
                           displayName,
-                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: ThemeHelper.textPrimary(context)),
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -221,7 +224,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: ThemeHelper.surface(context),
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
                 ),
@@ -239,7 +242,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             // Danh sách Menu chức năng
             Container(
-              color: Colors.white,
+              color: ThemeHelper.surface(context),
               child: Column(
                 children: [
                   _buildMenuItem(context, Icons.receipt_long, 'Đơn hàng của tôi', RouteNames.orderList),
@@ -305,7 +308,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
         const SizedBox(height: 8),
-        Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+        Text(label, style: TextStyle(fontSize: 12, color: ThemeHelper.textSecondary(context))),
       ],
     );
   }
@@ -313,8 +316,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildMenuItem(BuildContext context, IconData icon, String title, String route) {
     return ListTile(
       leading: Icon(icon, color: AppColors.primary),
-      title: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-      trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+      title: Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: ThemeHelper.textPrimary(context))),
+      trailing: Icon(Icons.arrow_forward_ios, size: 16, color: ThemeHelper.icon(context)),
       onTap: () {
         if (route.isNotEmpty) {
           Navigator.pushNamed(context, route);

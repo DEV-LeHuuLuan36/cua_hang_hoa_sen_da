@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../theme/app_colors.dart';
+import '../../../utils/theme_helper.dart';
 import '../../../utils/constants/route_names.dart';
 import '../../../providers/user_provider.dart';
 import '../../../providers/auth_provider.dart';
-import '../../../models/common/address.dart'; // Đảm bảo import này đúng
+import '../../../models/common/address.dart';
 
 class AddressBookScreen extends StatefulWidget {
   const AddressBookScreen({Key? key}) : super(key: key);
@@ -17,7 +18,6 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
   @override
   void initState() {
     super.initState();
-    // Gọi tải dữ liệu ngay khi vào trang
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authProvider = context.read<AuthProvider>();
       if (authProvider.currentUser != null) {
@@ -28,22 +28,32 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: ThemeHelper.background(context),
       appBar: AppBar(
-        title: const Text('Sổ địa chỉ', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
+        title: Text(
+          'Sổ địa chỉ',
+          style: TextStyle(color: ThemeHelper.textPrimary(context), fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: ThemeHelper.surface(context),
         elevation: 0.5,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        iconTheme: IconThemeData(color: ThemeHelper.textPrimary(context)),
       ),
       body: Consumer<UserProvider>(
         builder: (context, userProvider, child) {
           if (userProvider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return Center(child: CircularProgressIndicator(color: isDark ? AppColors.primary : AppColors.primary));
           }
 
           if (userProvider.addresses.isEmpty) {
-            return const Center(child: Text('Bạn chưa có địa chỉ nào.'));
+            return Center(
+              child: Text(
+                'Bạn chưa có địa chỉ nào.',
+                style: TextStyle(color: ThemeHelper.textSecondary(context)),
+              ),
+            );
           }
 
           return ListView.builder(
@@ -51,7 +61,7 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
             itemCount: userProvider.addresses.length,
             itemBuilder: (context, index) {
               final addr = userProvider.addresses[index];
-              return _buildAddressCard(context, addr);
+              return _buildAddressCard(context, addr, isDark);
             },
           );
         },
@@ -66,7 +76,6 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () {
-              // Nút này giờ sẽ hoạt động vì Route đã được định nghĩa trong app_routes.dart
               Navigator.pushNamed(context, '${RouteNames.addressBook}/add');
             },
             child: const Text('+ THÊM ĐỊA CHỈ MỚI', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
@@ -76,15 +85,20 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
     );
   }
 
-  Widget _buildAddressCard(BuildContext context, Address address) {
+  Widget _buildAddressCard(BuildContext context, Address address, bool isDark) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: ThemeHelper.surface(context),
         borderRadius: BorderRadius.circular(12),
         border: address.isDefault ? Border.all(color: AppColors.primary, width: 2) : null,
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8)],
+        boxShadow: [
+          BoxShadow(
+            color: (isDark ? Colors.black : Colors.black).withValues(alpha: 0.05),
+            blurRadius: 8,
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -92,20 +106,39 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(address.fullName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              Text(
+                address.fullName,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: ThemeHelper.textPrimary(context),
+                ),
+              ),
               InkWell(
                 onTap: () => Navigator.pushNamed(context, '${RouteNames.addressBook}/edit', arguments: address.id),
-                child: const Text('Sửa', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
+                child: Text(
+                  'Sửa',
+                  style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+                ),
               ),
             ],
           ),
           const SizedBox(height: 4),
-          Text(address.phone, style: const TextStyle(color: Colors.grey)),
+          Text(
+            address.phone,
+            style: TextStyle(color: ThemeHelper.textSecondary(context)),
+          ),
           const SizedBox(height: 8),
-          Text('${address.addressLine}, ${address.ward}, ${address.district}, ${address.city}'),
+          Text(
+            '${address.addressLine}, ${address.ward}, ${address.district}, ${address.city}',
+            style: TextStyle(color: ThemeHelper.textPrimary(context)),
+          ),
           if (address.isDefault) ...[
             const SizedBox(height: 8),
-            const Text('[Mặc định]', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold, fontSize: 12)),
+            Text(
+              '[Mặc định]',
+              style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold, fontSize: 12),
+            ),
           ]
         ],
       ),
