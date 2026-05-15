@@ -28,8 +28,7 @@ This project was built to strengthen my understanding of Flutter state managemen
 
 ## 🎥 Demo Video
 
-*(Chèn link ảnh GIF 30s hoặc link YouTube không công khai demo các luồng: Cuộn trang chủ -> Thêm giỏ hàng -> Check bản đồ -> Chuyển Dark Mode)*
-
+<img width="400" height="888" alt="demo" src="https://github.com/user-attachments/assets/cefa2467-06ac-4e96-a25a-ca5e93252e9f" />
 ---
 
 ## 🛠 Architecture & Technologies
@@ -72,10 +71,17 @@ Implemented responsive layouts with Google Maps integration, dynamic theme switc
 ## 📱 Screenshots
 
 <p align="center">
-  <img src="screenshots/home.png" width="200" style="margin: 10px;" />
-  <img src="screenshots/detail.png" width="200" style="margin: 10px;" />
-  <img src="screenshots/cart.png" width="200" style="margin: 10px;" />
-  <img src="screenshots/maps.png" width="200" style="margin: 10px;" />
+  <img src="https://github.com/user-attachments/assets/cdad0ec7-682d-4c47-bf7a-f1382c0640ab" width="200" style="margin: 5px;" />
+  <img src="https://github.com/user-attachments/assets/7fff9680-744a-4e9e-916a-b73c116f308f" width="200" style="margin: 5px;" />
+  <img src="https://github.com/user-attachments/assets/3c929f28-6811-4234-810d-79a330632b56" width="200" style="margin: 5px;" />
+  <img src="https://github.com/user-attachments/assets/1cefab58-d3a6-450b-a1e4-5ae6fb905b35" width="200" style="margin: 5px;" />
+  <img src="https://github.com/user-attachments/assets/357fe654-9634-473b-b131-ec3e7fffb02d" width="200" style="margin: 5px;" />
+  <img src="https://github.com/user-attachments/assets/f8d79d3d-7042-428f-b3f9-0b289c23010f" width="200" style="margin: 5px;" />
+  <img src="https://github.com/user-attachments/assets/f40a1388-c63a-4da2-9435-adb89cca2e3b" width="200" style="margin: 5px;" />
+  <img src="https://github.com/user-attachments/assets/1bba7236-9a8e-4e4d-bc6a-2a97efecfee3" width="200" style="margin: 5px;" />
+  <img src="https://github.com/user-attachments/assets/e5f8476a-ba3d-4c98-bfd4-7e939cd94ec4" width="200" style="margin: 5px;" />
+  <img src="https://github.com/user-attachments/assets/1d8f2e59-7633-442e-95c2-93911d31dffa" width="200" style="margin: 5px;" />
+  <img src="https://github.com/user-attachments/assets/96bd435a-7171-4aee-9597-90e66ae58277" width="200" style="margin: 5px;" />
 </p>
 
 ---
