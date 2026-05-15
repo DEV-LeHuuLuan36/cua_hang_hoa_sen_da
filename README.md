@@ -1,143 +1,78 @@
-# 🌿 App Cửa Hàng Hoa Sen Đá
+# 🌵 Succulent Store - E-Commerce Mobile App
 
-### *Succulent Store - Ứng dụng thương mại điện tử cho người yêu cây cảnh*
+![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=for-the-badge&logo=Flutter&logoColor=white)
+![Dart](https://img.shields.io/badge/dart-%230175C2.svg?style=for-the-badge&logo=dart&logoColor=white)
+![SQLite](https://img.shields.io/badge/sqlite-%2307405e.svg?style=for-the-badge&logo=sqlite&logoColor=white)
 
----
+A Flutter-based mobile e-commerce application focused on responsive UI design, local data persistence, and scalable state management.
+
+## 💡 Motivation
+This project was built to strengthen my understanding of Flutter state management, local database architecture, and responsive mobile UI development through a practical, real-world e-commerce scenario.
+
+## 🎥 Demo Video
+*(Chèn link ảnh GIF 30s hoặc link YouTube không công khai demo các luồng: Cuộn trang chủ -> Thêm giỏ hàng -> Check bản đồ -> Chuyển Dark Mode)*
+
+## 🛠 Architecture & Technologies
+This project is structured with maintainability and clean code principles in mind:
+* **Design Pattern:** Implemented the **DAO (Data Access Object) & Repository Pattern** to separate business logic from data access, ensuring better separation of concerns and maintainability.
+* **State Management:** Utilized `Provider` to manage app state efficiently across multiple screens.
+* **Local Storage:** Built on top of **SQLite** (`sqflite`) for local offline data persistence.
+
+## 📦 Main Dependencies
+* `provider` - State management
+* `sqflite` - SQLite database wrapper
+* `Maps_flutter` - Maps integration
+* `shared_preferences` - Simple key-value storage
+* `shimmer` - Loading effects
+
+## 🧠 Technical Challenges & Solutions
+* **State Management Optimization:** Optimized `Provider` state updates to minimize unnecessary widget rebuilds, specifically within the shopping cart and checkout flows.
+* **Component Reusability:** Structured reusable widgets (custom cards, buttons, shimmer effects) to maintain consistent UI behavior and reduce code duplication across screens.
+* **Data Persistence:** Implemented SQLite data persistence for offline cart, wishlist, and user session handling.
+* **UI/UX Implementation:** Managed complex UI layouts, including Google Maps integration, dynamic theme switching (Dark/Light mode), and responsive rendering across different screen sizes.
+
+## 📱 Screenshots
 
 <p align="center">
-  <img src="assets/images/products/sen-da-xanh.jpg" width="200" alt="Sen Đá Xanh">
+  <img src="screenshots/home.png" width="200" style="margin: 10px;">
+  <img src="screenshots/detail.png" width="200" style="margin: 10px;">
+  <img src="screenshots/cart.png" width="200" style="margin: 10px;">
+  <img src="screenshots/maps.png" width="200" style="margin: 10px;">
 </p>
 
-> 🚀 **Ứng dụng e-commerce hoàn chỉnh** được xây dựng bằng Flutter, hỗ trợ đầy đủ chức năng mua sắm, quản lý tài khoản và quản trị.
+## 🚀 Getting Started
 
----
-
-## ✨ Tính Năng Nổi Bật
-
-### 👤 Xác Thực & Bảo Mật
-- **Đăng nhập / Đăng ký** với mật khẩu được mã hóa **SHA-256**
-- **Quản lý tài khoản**: Chỉnh sửa hồ sơ, đổi mật khẩu, xóa tài khoản
-- **Phân quyền**: Customer & Admin Dashboard riêng biệt
-
-### 🛒 Mua Sắm
-- **42 mẫu sản phẩm thực tế** với hình ảnh chất lượng cao
-- **Danh mục đa dạng**: Sen đá các loại, sen ngọc, sen gac, sen bông...
-- **Tìm kiếm & Lọc** sản phẩm theo tên
-- **Giỏ hàng** với tính năng tăng/giảm số lượng
-
-### 🎫 Hệ Thống Voucher
-- **Quỹ Voucher đa tầng**: Voucher giảm giá & Voucher freeship
-- **Tự động freeship** vào ngày đặc biệt (ngày = tháng)
-- **Mã giảm giá** áp dụng linh hoạt theo đơn hàng
-
-### 📊 Admin Dashboard
-- **Thống kê tổng quan**: Doanh thu, đơn hàng, khách hàng mới
-- **Quản lý voucher**: Tạo, chỉnh sửa, xóa voucher
-- **Báo cáo** theo khoảng thời gian
-
-### 🔔 Thông Báo
-- Hệ thống thông báo đẩy trong ứng dụng
-- Lịch sử thông báo cá nhân
-
----
-
-## 🛠️ Công Nghệ Sử Dụng
-
-| Công nghệ | Mô tả |
-|-----------|-------|
-| **Flutter** | Framework cross-platform (Android & iOS) |
-| **SQLite (sqflite)** | Cơ sở dữ liệu cục bộ |
-| **Provider** | Quản lý state management |
-| **SHA-256** | Mã hóa mật khẩu bảo mật |
-| **Clean Architecture** | Cấu trúc code chuyên nghiệp |
-
----
-
-## 📁 Cấu Trúc Thư Mục
-
-```
-lib/
-├── main.dart                 # Entry point
-├── models/                   # Data models
-│   ├── product/
-│   ├── user/
-│   ├── order/
-│   └── voucher/
-├── providers/                 # State management
-│   ├── auth_provider.dart
-│   ├── cart_provider.dart
-│   ├── product_provider.dart
-│   └── ...
-├── database/                  # Database layer
-│   ├── database_helper.dart   # SQLite configuration
-│   ├── contracts/             # Table schemas
-│   └── daos/                 # Data Access Objects
-├── screens/                   # UI screens
-│   ├── customer/
-│   │   ├── home/
-│   │   ├── cart/
-│   │   ├── profile/
-│   │   └── product/
-│   └── admin/
-├── services/                 # Business services
-├── widgets/                   # Reusable components
-└── utils/                    # Utilities
-    └── constants/
-```
-
----
-
-## 🚀 Hướng Dẫn Cài Đặt
-
-### Yêu cầu
-- Flutter SDK (>=3.0.0)
-- Dart SDK
-- Android Studio / VS Code
-
-### Các bước cài đặt
+To run this project locally, execute the following commands:
 
 ```bash
-# 1. Clone repository
-git clone <repository_url>
+git clone [https://github.com/DEV-LeHuuLuan36/cua_hang_hoa_sen_da.git](https://github.com/DEV-LeHuuLuan36/cua_hang_hoa_sen_da.git)
 cd cua_hang_hoa_sen_da
-
-# 2. Cài đặt dependencies
 flutter pub get
-
-# 3. Chạy ứng dụng
 flutter run
-```
+📂 Folder Structure
+The source code is modularized by feature and responsibility:
 
----
+Plaintext
+lib/
+├── database/
+│   ├── contracts/    # Database table schemas
+│   ├── daos/         # Data Access Objects (Raw SQL queries)
+│   └── repositories/ # Abstraction layer for data handling
+├── models/           # Data classes and enums
+├── providers/        # State management classes
+├── routes/           # Application routing logic
+├── screens/          # UI Screens (Customer, Admin, Auth)
+├── services/         # External services (e.g., Notifications)
+├── theme/            # App colors and typography
+├── utils/            # Constants and helper functions
+└── widgets/          # Reusable UI components
+🧪 Future Technical Improvements
+This project is continuously evolving. The roadmap for upcoming technical enhancements includes:
 
-## ⚠️ Lưu Ý Quan Trọng
+Implement remote API layer with Dio / http.
 
-> 📸 **Về hình ảnh sản phẩm**
-> 
-> Ứng dụng sử dụng **42 hình ảnh sản phẩm thực tế** nằm trong thư mục:
-> ```
-> assets/images/products/
-> ```
-> 
-> **Hãy copy toàn bộ file ảnh vào đúng thư mục này** trước khi chạy ứng dụng để hiển thị sản phẩm đúng cách.
+Introduce BLoC or Riverpod architecture for complex state scaling.
 
----
+Add unit and widget testing to ensure core business logic stability.
 
-## 📱 Tài Khoản Demo
-
-| Vai trò | Username | Password |
-|---------|----------|----------|
-| **Admin** | admin | admin123 |
-| **Customer** | lehuu | 123456 |
-
----
-
-## 📄 License
-
-Dự án này được tạo cho mục đích học tập và phát triển cá nhân.
-
----
-
-<p align="center">
-  <strong>🌿 Sen Đá - Vẻ đẹp thiên nhiên trong tầm tay 🌿</strong>
-</p>
+Integrate Firebase Authentication for secure user identity management.
