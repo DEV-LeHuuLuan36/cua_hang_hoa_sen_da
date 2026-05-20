@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../theme/app_colors.dart';
 import '../../../utils/theme_helper.dart';
 import '../../../providers/order_provider.dart';
+import '../../../widgets/common/shimmer_box.dart';
 
 class OrderDetailScreen extends StatefulWidget {
   final String? orderId;
@@ -43,7 +44,14 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       body: Consumer<OrderProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading) {
-            return Center(child: CircularProgressIndicator(color: isDark ? AppColors.primary : AppColors.primary));
+            return ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                ShimmerListItem(height: 120, borderRadius: 12, margin: const EdgeInsets.only(bottom: 16)),
+                ShimmerListItem(height: 80, borderRadius: 12, margin: const EdgeInsets.only(bottom: 16)),
+                ShimmerListItem(height: 80, borderRadius: 12, margin: const EdgeInsets.only(bottom: 16)),
+              ],
+            );
           }
 
           final order = provider.currentOrder;

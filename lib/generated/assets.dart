@@ -4,6 +4,104 @@ import 'package:flutter/widgets.dart';
 
 class Assets {
   Assets._();
+
+  static const $AssetsImagesGen images = $AssetsImagesGen();
+}
+
+class $AssetsImagesGen {
+  const $AssetsImagesGen();
+
+  final $AssetsProductsGen products = const $AssetsProductsGen();
+  final AssetGenImage logo = const AssetGenImage('assets/images/logo.png');
+}
+
+class $AssetsProductsGen {
+  const $AssetsProductsGen();
+
+  final AssetGenImage caySenDaNau =
+      const AssetGenImage('assets/images/products/cay-sen-da-nau.jpg');
+  final AssetGenImage senDaBaMau =
+      const AssetGenImage('assets/images/products/sen-da-ba-mau.jpg');
+  final AssetGenImage senDaBapCaiTim =
+      const AssetGenImage('assets/images/products/sen-da-bap-cai-tim.jpg');
+  final AssetGenImage senDaBongHongDen =
+      const AssetGenImage('assets/images/products/sen-da-bong-hong-den.jpg');
+  final AssetGenImage senDaCanhBuom =
+      const AssetGenImage('assets/images/products/sen-da-canh-buom.jpg');
+  final AssetGenImage senDaCoNgoc =
+      const AssetGenImage('assets/images/products/sen-da-co-ngoc.jpg');
+  final AssetGenImage senDaCoTim =
+      const AssetGenImage('assets/images/products/sen-da-co-tim.jpg');
+  final AssetGenImage senDaDaQuang =
+      const AssetGenImage('assets/images/products/sen-da-da-quang.jpg');
+  final AssetGenImage senDaDatTrang =
+      const AssetGenImage('assets/images/products/sen-da-dat-trang.jpg');
+  final AssetGenImage senDaDiaAnhKim =
+      const AssetGenImage('assets/images/products/sen-da-dia-anh-kim.jpg');
+  final AssetGenImage senDaDola =
+      const AssetGenImage('assets/images/products/sen-da-dola.jpg');
+  final AssetGenImage senDaDu =
+      const AssetGenImage('assets/images/products/sen-da-du.jpg');
+  final AssetGenImage senDaGacNai =
+      const AssetGenImage('assets/images/products/sen-da-gac-nai.jpg');
+  final AssetGenImage senDaGiotLe =
+      const AssetGenImage('assets/images/products/sen-da-giot-le.jpg');
+  final AssetGenImage senDaHamCaMap =
+      const AssetGenImage('assets/images/products/sen-da-ham-ca-map.jpg');
+  final AssetGenImage senDaHoaCuc =
+      const AssetGenImage('assets/images/products/sen-da-hoa-cuc.jpg');
+  final AssetGenImage senDaHoaHongXanh =
+      const AssetGenImage('assets/images/products/sen-da-hoa-hong-xanh.jpg');
+  final AssetGenImage senDaHongMap =
+      const AssetGenImage('assets/images/products/sen-da-hong-map.jpg');
+  final AssetGenImage senDaHongPhan =
+      const AssetGenImage('assets/images/products/sen-da-hong-phan.jpg');
+  final AssetGenImage senDaHongSao =
+      const AssetGenImage('assets/images/products/sen-da-hong-sao.jpg');
+  final AssetGenImage senDaKim =
+      const AssetGenImage('assets/images/products/sen-da-kim.jpg');
+  final AssetGenImage senDaKimCuong =
+      const AssetGenImage('assets/images/products/sen-da-kim-cuong.jpg');
+  final AssetGenImage senDaLaThom =
+      const AssetGenImage('assets/images/products/sen-da-la-thom.jpg');
+  final AssetGenImage senDaMatTroi =
+      const AssetGenImage('assets/images/products/sen-da-mat-troi.jpg');
+  final AssetGenImage senDaMongRong =
+      const AssetGenImage('assets/images/products/sen-da-mong-rong.jpg');
+  final AssetGenImage senDaNgocGuoc =
+      const AssetGenImage('assets/images/products/sen-da-ngoc-guoc.jpg');
+  final AssetGenImage senDaNhungVienDen =
+      const AssetGenImage('assets/images/products/sen-da-nhung-vien-den.jpg');
+  final AssetGenImage senDaPhatBa =
+      const AssetGenImage('assets/images/products/sen-da-phat-ba.jpg');
+  final AssetGenImage senDaRubby =
+      const AssetGenImage('assets/images/products/sen-da-rubby.jpg');
+  final AssetGenImage senDaThachLan =
+      const AssetGenImage('assets/images/products/sen-da-thach-lan.jpg');
+  final AssetGenImage senDaThuocDuoc =
+      const AssetGenImage('assets/images/products/sen-da-thuoc-duoc.jpg');
+  final AssetGenImage senDaTim =
+      const AssetGenImage('assets/images/products/sen-da-tim.jpg');
+  final AssetGenImage senDaTraiTim1 =
+      const AssetGenImage('assets/images/products/sen-da-trai-tim-1.jpg');
+  final AssetGenImage senDaTuPhuong =
+      const AssetGenImage('assets/images/products/sen-da-tu-phuong.jpg');
+  final AssetGenImage senDaVang =
+      const AssetGenImage('assets/images/products/sen-da-vang.jpg');
+  final AssetGenImage senDaVienDo =
+      const AssetGenImage('assets/images/products/sen-da-vien-do.jpg');
+  final AssetGenImage senDaXanh =
+      const AssetGenImage('assets/images/products/sen-da-xanh.jpg');
+  final AssetGenImage senDaXanh1 =
+      const AssetGenImage('assets/images/products/sen-da-xanh (1).jpg');
+  final AssetGenImage senNgocBich1 =
+      const AssetGenImage('assets/images/products/sen-ngoc-bich_1.jpg');
+  final AssetGenImage senSoi =
+      const AssetGenImage('assets/images/products/sen-soi.jpg');
+  final AssetGenImage senTaiGauMup =
+      const AssetGenImage('assets/images/products/sen-tai-gau-mup.jpg');
+  final AssetGenImage senThachNgoc1 =
+      const AssetGenImage('assets/images/products/sen-thach-ngoc_1.jpg');
 }
 
 class AssetGenImage {

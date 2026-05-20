@@ -1034,12 +1034,16 @@ class DatabaseHelper {
       });
     }
 
+    var productBatch = db.batch();
     for (var product in products) {
-      await db.insert('products', product, conflictAlgorithm: ConflictAlgorithm.replace);
+      productBatch.insert('products', product, conflictAlgorithm: ConflictAlgorithm.replace);
     }
+    await productBatch.commit(noResult: true);
 
+    var imageBatch = db.batch();
     for (var img in productImages) {
-      await db.insert('product_images', img, conflictAlgorithm: ConflictAlgorithm.replace);
+      imageBatch.insert('product_images', img, conflictAlgorithm: ConflictAlgorithm.replace);
     }
+    await imageBatch.commit(noResult: true);
   }
 }

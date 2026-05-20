@@ -10,6 +10,7 @@ import '../utils/constants/route_names.dart';
 // Auth
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
+import '../screens/auth/forget_password_screen.dart';
 
 // Customer
 import '../screens/customer/home/home_screen.dart';
@@ -43,6 +44,8 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const LoginScreen());
       case RouteNames.register:
         return MaterialPageRoute(builder: (_) => const RegisterScreen());
+      case RouteNames.forgotPassword:
+        return MaterialPageRoute(builder: (_) => const ForgetPasswordScreen());
 
     // --- CUSTOMER ROUTES ---
       case RouteNames.home:

@@ -7,6 +7,7 @@ import '../../../theme/app_colors.dart';
 import '../../../utils/constants/route_names.dart';
 import '../../../utils/theme_helper.dart';
 import '../../../widgets/common/pressable_scale.dart';
+import '../../../widgets/common/empty_state_widget.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({Key? key}) : super(key: key);
@@ -50,23 +51,13 @@ class CartScreen extends StatelessWidget {
         ),
       ),
       body: cartItems.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.shopping_cart_outlined, size: 80, color: ThemeHelper.textSecondary(context)),
-                  const SizedBox(height: 16),
-                  Text('Giỏ hàng trống', style: TextStyle(fontSize: 20, color: ThemeHelper.textSecondary(context))),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-                    onPressed: () {
-                      Navigator.pushNamedAndRemoveUntil(context, RouteNames.home, (route) => false);
-                    },
-                    child: const Text('TIẾP TỤC MUA SẮM', style: TextStyle(color: Colors.white)),
-                  )
-                ],
-              ),
+          ? EmptyStateWidget(
+              icon: Icons.shopping_bag_outlined,
+              message: 'Giỏ hàng của bạn đang trống',
+              actionLabel: 'Khám phá ngay',
+              onActionPressed: () {
+                Navigator.pushNamedAndRemoveUntil(context, RouteNames.home, (route) => false);
+              },
             )
           : Column(
               children: [

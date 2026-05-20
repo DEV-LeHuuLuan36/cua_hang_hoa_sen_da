@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../utils/constants/route_names.dart';
 import '../../../widgets/common/product_card.dart';
+import '../../../widgets/common/shimmer_box.dart';
 import '../../../providers/product_provider.dart';
 
 import '../../../providers/auth_provider.dart';
@@ -186,7 +187,21 @@ class _HomeContentState extends State<HomeContent> {
 
             // KHI TẢI XONG: Kiểm tra nếu trống thì báo, có thì vẽ GridView
             if (isLoading)
-              const Center(child: CircularProgressIndicator(color: AppColors.primary))
+              SizedBox(
+                height: 480,
+                child: GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 0.75,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                  ),
+                  itemCount: 4,
+                  itemBuilder: (context, index) => const ShimmerGridItem(),
+                ),
+              )
             else if (products.isEmpty)
               Center(
                 child: Padding(

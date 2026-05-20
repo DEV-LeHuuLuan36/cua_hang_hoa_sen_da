@@ -3,6 +3,7 @@ import '../../../database/daos/review_dao.dart';
 import '../../../providers/product_provider.dart';
 import '../../../theme/app_colors.dart';
 import '../../../utils/theme_helper.dart';
+import '../../../widgets/common/shimmer_box.dart';
 import 'package:provider/provider.dart';
 
 class AllReviewsScreen extends StatefulWidget {
@@ -102,7 +103,14 @@ class _AllReviewsScreenState extends State<AllReviewsScreen> {
           // Danh sách đánh giá
           Expanded(
             child: _isLoading
-                ? Center(child: CircularProgressIndicator(color: AppColors.primary))
+              ? ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: 3,
+                  itemBuilder: (context, index) => const Padding(
+                    padding: EdgeInsets.only(bottom: 12),
+                    child: ShimmerListItem(height: 100, borderRadius: 12),
+                  ),
+                )
                 : _reviews.isEmpty
                     ? _buildEmptyState()
                     : _buildReviewsList(),

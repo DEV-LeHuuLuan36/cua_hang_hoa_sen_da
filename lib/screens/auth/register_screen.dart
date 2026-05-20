@@ -15,8 +15,10 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -25,6 +27,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void dispose() {
     _usernameController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     _fullNameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
@@ -32,26 +35,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   void _handleRegister() async {
-    // 1. Kiểm tra không được để trống
-    if (_usernameController.text.isEmpty ||
-        _passwordController.text.isEmpty ||
-        _fullNameController.text.isEmpty ||
-        _emailController.text.isEmpty ||
-        _phoneController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Vui lòng điền đầy đủ thông tin!'),
-          backgroundColor: AppColors.error,
-        ),
-      );
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-    // 2. Khởi tạo đối tượng Customer mới (Mặc định Role là CUSTOMER)
     final newCustomer = Customer(
-      id: 'usr_${DateTime.now().millisecondsSinceEpoch}', // ID tự sinh đơn giản
+      id: 'usr_${DateTime.now().millisecondsSinceEpoch}', // temporary id; Firebase UID replaces it on register
       username: _usernameController.text.trim(),
       password: _passwordController.text.trim(),
       fullName: _fullNameController.text.trim(),
@@ -61,7 +50,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       updatedAt: DateTime.now().millisecondsSinceEpoch,
     );
 
-    // 3. Gọi hàm đăng ký
     final success = await authProvider.register(newCustomer);
 
     if (success && mounted) {
@@ -71,7 +59,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
           backgroundColor: AppColors.success,
         ),
       );
-      // Quay lại màn hình Login
       Navigator.pop(context);
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -100,69 +87,128 @@ class _RegisterScreenState extends State<RegisterScreen> {
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.person_add_alt_1, size: 80, color: AppColors.primary),
-              const SizedBox(height: 16),
-              const Text(
-                'Tạo Tài Khoản',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primaryDark,
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.person_add_alt_1, size: 80, color: AppColors.primary),
+                const SizedBox(height: 16),
+                const Text(
+                  'Tạo Tài Khoản',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primaryDark,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 32),
+                const SizedBox(height: 32),
 
-              // Các trường nhập liệu
-              CustomTextField(
-                controller: _fullNameController,
-                label: 'Họ và tên',
-                hint: 'Nhập họ và tên',
-                prefixIcon: Icons.badge_outlined,
-              ),
-              const SizedBox(height: 16),
-              CustomTextField(
-                controller: _usernameController,
-                label: 'Tên đăng nhập',
-                hint: 'Nhập tên đăng nhập',
-                prefixIcon: Icons.person_outline,
-              ),
-              const SizedBox(height: 16),
-              CustomTextField(
-                controller: _passwordController,
-                label: 'Mật khẩu',
-                hint: 'Nhập mật khẩu',
-                prefixIcon: Icons.lock_outline,
-                isPassword: true,
-              ),
-              const SizedBox(height: 16),
-              CustomTextField(
-                controller: _emailController,
-                label: 'Email',
-                hint: 'Nhập email của bạn',
-                prefixIcon: Icons.email_outlined,
-                keyboardType: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: 16),
-              CustomTextField(
-                controller: _phoneController,
-                label: 'Số điện thoại',
-                hint: 'Nhập số điện thoại',
-                prefixIcon: Icons.phone_outlined,
-                keyboardType: TextInputType.phone,
-              ),
-              const SizedBox(height: 32),
+                CustomTextField(
+                  controller: _fullNameController,
+                  label: 'Họ và tên',
+                  hint: 'Nhập họ và tên',
+                  prefixIcon: Icons.badge_outlined,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Vui lòng nhập họ và tên.';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
 
-              // Nút Đăng ký
-              CustomButton(
-                text: 'ĐĂNG KÝ',
-                isLoading: isLoading,
-                onPressed: _handleRegister,
-              ),
-              const SizedBox(height: 24),
-            ],
+                CustomTextField(
+                  controller: _emailController,
+                  label: 'Email',
+                  hint: 'Nhập email của bạn',
+                  prefixIcon: Icons.email_outlined,
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Vui lòng nhập email.';
+                    }
+                    if (!value.contains('@') || !value.contains('.')) {
+                      return 'Vui lòng nhập email hợp lệ.';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                CustomTextField(
+                  controller: _usernameController,
+                  label: 'Tên đăng nhập',
+                  hint: 'Nhập tên đăng nhập',
+                  prefixIcon: Icons.person_outline,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Vui lòng nhập tên đăng nhập.';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                CustomTextField(
+                  controller: _passwordController,
+                  label: 'Mật khẩu',
+                  hint: 'Nhập mật khẩu',
+                  prefixIcon: Icons.lock_outline,
+                  isPassword: true,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Vui lòng nhập mật khẩu.';
+                    }
+                    if (value.trim().length < 6) {
+                      return 'Mật khẩu phải có ít nhất 6 ký tự.';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                CustomTextField(
+                  controller: _confirmPasswordController,
+                  label: 'Xác nhận mật khẩu',
+                  hint: 'Nhập lại mật khẩu',
+                  prefixIcon: Icons.lock_outline,
+                  isPassword: true,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Vui lòng xác nhận mật khẩu.';
+                    }
+                    if (value != _passwordController.text) {
+                      return 'Mật khẩu không khớp.';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                CustomTextField(
+                  controller: _phoneController,
+                  label: 'Số điện thoại',
+                  hint: 'Nhập số điện thoại',
+                  prefixIcon: Icons.phone_outlined,
+                  keyboardType: TextInputType.phone,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Vui lòng nhập số điện thoại.';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 32),
+
+                CustomButton(
+                  text: 'ĐĂNG KÝ',
+                  isLoading: isLoading,
+                  onPressed: _handleRegister,
+                ),
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
         ),
       ),

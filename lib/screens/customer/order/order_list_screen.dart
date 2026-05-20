@@ -4,6 +4,8 @@ import '../../../theme/app_colors.dart';
 import '../../../utils/theme_helper.dart';
 import '../../../providers/order_provider.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../widgets/common/shimmer_box.dart';
+import '../../../widgets/common/empty_state_widget.dart';
 
 class OrderListScreen extends StatefulWidget {
   const OrderListScreen({Key? key}) : super(key: key);
@@ -56,7 +58,14 @@ class _OrderListScreenState extends State<OrderListScreen> {
         body: Consumer<OrderProvider>(
           builder: (context, orderProvider, child) {
             if (orderProvider.isLoading) {
-              return Center(child: CircularProgressIndicator(color: isDark ? AppColors.primary : AppColors.primary));
+              return ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: 3,
+                itemBuilder: (context, index) => Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: ShimmerListItem(height: 200, borderRadius: 12),
+                ),
+              );
             }
 
             final myOrders = orderProvider.myOrders;
@@ -79,11 +88,9 @@ class _OrderListScreenState extends State<OrderListScreen> {
     final filteredOrders = orders.where((o) => o['order_status'] == statusKey).toList();
 
     if (filteredOrders.isEmpty) {
-      return Center(
-        child: Text(
-          'Không có đơn hàng nào ở trạng thái này.',
-          style: TextStyle(color: ThemeHelper.textSecondary(context)),
-        ),
+      return EmptyStateWidget(
+        icon: Icons.receipt_long_outlined,
+        message: 'Bạn chưa có đơn hàng nào',
       );
     }
 

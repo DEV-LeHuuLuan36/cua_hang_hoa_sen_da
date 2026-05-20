@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../theme/app_colors.dart';
 import '../../../utils/theme_helper.dart';
 import '../../../providers/recently_viewed_provider.dart';
+import '../../../widgets/common/shimmer_box.dart';
 import '../../../providers/auth_provider.dart';
 
 class RecentlyViewedScreen extends StatefulWidget {
@@ -43,7 +44,17 @@ class _RecentlyViewedScreenState extends State<RecentlyViewedScreen> {
       body: Consumer<RecentlyViewedProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading) {
-            return Center(child: CircularProgressIndicator(color: isDark ? AppColors.primary : AppColors.primary));
+            return GridView.builder(
+              padding: const EdgeInsets.all(16),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 0.75,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+              ),
+              itemCount: 4,
+              itemBuilder: (context, index) => const ShimmerGridItem(),
+            );
           }
 
           final products = provider.viewedProducts;

@@ -5,6 +5,8 @@ import '../../../utils/theme_helper.dart';
 import '../../../providers/favorite_provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../widgets/common/product_card.dart';
+import '../../../widgets/common/shimmer_box.dart';
+import '../../../widgets/common/empty_state_widget.dart';
 
 class WishlistScreen extends StatefulWidget {
   const WishlistScreen({Key? key}) : super(key: key);
@@ -43,28 +45,23 @@ class _WishlistScreenState extends State<WishlistScreen> {
       body: Consumer<FavoriteProvider>(
         builder: (context, favProvider, child) {
           if (favProvider.isLoading) {
-            return Center(child: CircularProgressIndicator(color: isDark ? AppColors.primary : AppColors.primary));
+            return GridView.builder(
+              padding: const EdgeInsets.all(16),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 0.75,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+              ),
+              itemCount: 4,
+              itemBuilder: (context, index) => const ShimmerGridItem(),
+            );
           }
 
           if (favProvider.favoriteProducts.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.favorite_border,
-                    size: 80,
-                    color: isDark ? AppColors.darkBorder : Colors.grey[300],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Danh sách yêu thích trống',
-                    style: TextStyle(
-                      color: isDark ? AppColors.darkTextSecondary : Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
+            return EmptyStateWidget(
+              icon: Icons.favorite_border,
+              message: 'Bạn chưa yêu thích sản phẩm nào',
             );
           }
 

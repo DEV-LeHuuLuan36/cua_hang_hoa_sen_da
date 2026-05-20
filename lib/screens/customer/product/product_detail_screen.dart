@@ -51,34 +51,37 @@ class ProductDetailScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 1. Ảnh sản phẩm (chất lượng cao)
-            Container(
-              width: double.infinity,
-              height: 350,
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF424242) : const Color(0xFFE0E0E0),
-                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(30)),
-              ),
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(30)),
-                child: product.primaryImage != null && product.primaryImage!.isNotEmpty
-                    ? Image.asset(
-                        product.primaryImage!,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        height: double.infinity,
-                        errorBuilder: (context, error, stackTrace) => Container(
+            Hero(
+              tag: 'product_image_${product.id}',
+              child: Container(
+                width: double.infinity,
+                height: 350,
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF424242) : const Color(0xFFE0E0E0),
+                  borderRadius: const BorderRadius.vertical(bottom: Radius.circular(30)),
+                ),
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(bottom: Radius.circular(30)),
+                  child: product.primaryImage != null && product.primaryImage!.isNotEmpty
+                      ? Image.asset(
+                          product.primaryImage!,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            color: isDark ? const Color(0xFF424242) : const Color(0xFFE0E0E0),
+                            child: Center(
+                              child: Icon(Icons.image, size: 80, color: ThemeHelper.icon(context)),
+                            ),
+                          ),
+                        )
+                      : Container(
                           color: isDark ? const Color(0xFF424242) : const Color(0xFFE0E0E0),
                           child: Center(
                             child: Icon(Icons.image, size: 80, color: ThemeHelper.icon(context)),
                           ),
                         ),
-                      )
-                    : Container(
-                        color: isDark ? const Color(0xFF424242) : const Color(0xFFE0E0E0),
-                        child: Center(
-                          child: Icon(Icons.image, size: 80, color: ThemeHelper.icon(context)),
-                        ),
-                      ),
+                ),
               ),
             ),
 

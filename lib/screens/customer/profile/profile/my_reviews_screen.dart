@@ -5,6 +5,7 @@ import '../../../../providers/order_provider.dart';
 import '../../../../providers/review_provider.dart';
 import '../../../../providers/product_provider.dart';
 import '../../../../theme/app_colors.dart';
+import '../../../../widgets/common/shimmer_box.dart';
 
 class MyReviewsScreen extends StatefulWidget {
   const MyReviewsScreen({Key? key}) : super(key: key);
@@ -108,7 +109,14 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
 
   Widget _buildToReviewTab() {
     if (_isLoading) {
-      return Center(child: CircularProgressIndicator(color: AppColors.primary));
+      return ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: 3,
+        itemBuilder: (context, index) => const Padding(
+          padding: EdgeInsets.only(bottom: 12),
+          child: ShimmerListItem(height: 100, borderRadius: 12),
+        ),
+      );
     }
 
     if (_itemsToReview.isEmpty) {
@@ -130,7 +138,14 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
 
   Widget _buildReviewedTab() {
     if (_isLoading) {
-      return Center(child: CircularProgressIndicator(color: AppColors.primary));
+      return ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: 3,
+        itemBuilder: (context, index) => const Padding(
+          padding: EdgeInsets.only(bottom: 12),
+          child: ShimmerListItem(height: 100, borderRadius: 12),
+        ),
+      );
     }
 
     if (_reviewedItems.isEmpty) {

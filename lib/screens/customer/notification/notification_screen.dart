@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../../database/daos/notification_dao.dart';
 import '../../../theme/app_colors.dart';
 import '../../../utils/theme_helper.dart';
+import '../../../widgets/common/shimmer_box.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({Key? key}) : super(key: key);
@@ -115,7 +116,14 @@ class _NotificationScreenState extends State<NotificationScreen> {
       ),
       body: SafeArea(
         child: _isLoading
-            ? Center(child: CircularProgressIndicator(color: isDark ? AppColors.primary : AppColors.primary))
+            ? ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: 5,
+                itemBuilder: (context, index) => const Padding(
+                  padding: EdgeInsets.only(bottom: 12),
+                  child: ShimmerListItem(height: 72, borderRadius: 12),
+                ),
+              )
             : _notifications.isEmpty
                 ? _buildEmptyState(isDark)
                 : _buildNotificationList(isDark),

@@ -6,6 +6,7 @@ import '../../../providers/recently_viewed_provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../utils/constants/route_names.dart';
 import '../../../widgets/common/product_card.dart';
+import '../../../widgets/common/shimmer_box.dart';
 import '../../../widgets/filter/filter_bottom_sheet.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -113,7 +114,19 @@ class _SearchScreenState extends State<SearchScreen> {
         builder: (context, provider, child) {
           if (provider.isLoading) {
             return Center(
-              child: CircularProgressIndicator(color: isDark ? AppColors.primary : AppColors.primary),
+              child: GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 0.75,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                ),
+                itemCount: 6,
+                itemBuilder: (context, index) => const ShimmerGridItem(),
+              ),
             );
           }
 

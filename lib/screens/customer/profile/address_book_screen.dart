@@ -6,6 +6,7 @@ import '../../../utils/constants/route_names.dart';
 import '../../../providers/user_provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../models/common/address.dart';
+import '../../../widgets/common/shimmer_box.dart';
 
 class AddressBookScreen extends StatefulWidget {
   const AddressBookScreen({Key? key}) : super(key: key);
@@ -44,7 +45,14 @@ class _AddressBookScreenState extends State<AddressBookScreen> {
       body: Consumer<UserProvider>(
         builder: (context, userProvider, child) {
           if (userProvider.isLoading) {
-            return Center(child: CircularProgressIndicator(color: isDark ? AppColors.primary : AppColors.primary));
+            return ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: 3,
+              itemBuilder: (context, index) => const Padding(
+                padding: EdgeInsets.only(bottom: 12),
+                child: ShimmerListItem(height: 100, borderRadius: 12),
+              ),
+            );
           }
 
           if (userProvider.addresses.isEmpty) {

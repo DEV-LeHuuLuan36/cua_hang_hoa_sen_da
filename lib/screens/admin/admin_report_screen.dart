@@ -7,6 +7,7 @@ import '../../database/daos/user_dao.dart';
 import '../../database/repositories/order_repository.dart';
 import '../../models/enums/order_status.dart';
 import '../../theme/app_colors.dart';
+import '../../widgets/common/shimmer_box.dart';
 
 enum ReportFilter { day, week, month, year }
 
@@ -242,7 +243,14 @@ class _AdminReportScreenState extends State<AdminReportScreen> {
       ),
       body: SafeArea(
         child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
+            ? ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: 3,
+                itemBuilder: (context, index) => const Padding(
+                  padding: EdgeInsets.only(bottom: 16),
+                  child: ShimmerListItem(height: 120, borderRadius: 12),
+                ),
+              )
             : LayoutBuilder(
                 builder: (context, constraints) {
                   return SingleChildScrollView(

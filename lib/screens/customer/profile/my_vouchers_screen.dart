@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../theme/app_colors.dart';
 import '../../../database/daos/voucher_dao.dart';
 import '../../../database/contracts/voucher_contract.dart';
+import '../../../widgets/common/shimmer_box.dart';
 
 class MyVouchersScreen extends StatefulWidget {
   const MyVouchersScreen({Key? key}) : super(key: key);
@@ -50,7 +51,14 @@ class _MyVouchersScreenState extends State<MyVouchersScreen> {
         iconTheme: IconThemeData(color: colorScheme.onSurface),
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator(color: AppColors.primary))
+          ? ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: 4,
+              itemBuilder: (context, index) => const Padding(
+                padding: EdgeInsets.only(bottom: 12),
+                child: ShimmerListItem(height: 80, borderRadius: 12),
+              ),
+            )
           : _vouchers.isEmpty
               ? _buildEmptyState(context)
               : _buildVoucherList(context),

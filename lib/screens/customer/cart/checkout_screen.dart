@@ -12,8 +12,7 @@ import '../../../models/common/address.dart';
 import '../../../models/cart/cart_item.dart';
 import '../../../models/product/succulent.dart';
 import '../../../widgets/common/pressable_scale.dart';
-import '../../../database/daos/voucher_dao.dart';
-import '../../../database/contracts/voucher_contract.dart';
+import '../../../providers/voucher_provider.dart';
 import '../../../services/notification_service.dart';
 
 class CheckoutScreen extends StatefulWidget {
@@ -27,7 +26,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> with SingleTickerProvid
   static const double _sectionSpacing = 20;
   static const double _shippingFeeDefault = 30000;
 
-  final VoucherDao _voucherDao = VoucherDao();
   final NotificationService _notificationService = NotificationService();
   final TextEditingController _voucherController = TextEditingController();
 
@@ -51,19 +49,25 @@ class _CheckoutScreenState extends State<CheckoutScreen> with SingleTickerProvid
     super.initState();
     _shimmerController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))..repeat();
     _notificationService.initialize();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _calculateInitialTotals();
+      _loadUserAddresses();
+    });
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Tính toán ban đầu - KHÔNG cần lấy từ arguments
-    _calculateInitialTotals();
+  Future<void> _loadUserAddresses() async {
     final userProvider = context.read<UserProvider>();
     final authProvider = context.read<AuthProvider>();
     final userId = authProvider.currentUser?.id;
     if (userId != null && userProvider.addresses.isEmpty) {
       userProvider.loadUserAddresses(userId);
     }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadUserAddresses();
   }
 
   Future<void> _reloadAddresses() async {
@@ -100,7 +104,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> with SingleTickerProvid
       _voucherError = null;
     });
     try {
-      final result = await _voucherDao.validateVoucher(code: code.trim(), totalAmount: _subTotal);
+      final result = await context.read<VoucherProvider>().validateVoucher(code: code.trim(), totalAmount: _subTotal);
       if (!result.isValid) {
         setState(() {
           _voucherError = result.errorMessage ?? 'Mã giảm giá không hợp lệ';
@@ -109,7 +113,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> with SingleTickerProvid
         return;
       }
       final voucher = result.voucher!;
-      final voucherType = voucher[VoucherContract.colVoucherType] ?? 'discount';
+      final voucherType = voucher['voucher_type'] ?? 'discount';
       HapticFeedback.lightImpact();
       if (voucherType == 'shipping') {
         setState(() {
@@ -122,7 +126,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> with SingleTickerProvid
         _voucherController.clear();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Áp dụng mã ${voucher[VoucherContract.colCode]} - Freeship!'), backgroundColor: Colors.blue),
+            SnackBar(content: Text('Áp dụng mã ${voucher['code']} - Freeship!'), backgroundColor: Colors.blue),
           );
         }
       } else {
@@ -130,7 +134,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> with SingleTickerProvid
         _voucherController.clear();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Áp dụng mã ${voucher[VoucherContract.colCode]} - Giảm giá!'), backgroundColor: AppColors.success),
+            SnackBar(content: Text('Áp dụng mã ${voucher['code']} - Giảm giá!'), backgroundColor: AppColors.success),
           );
         }
       }
@@ -147,9 +151,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> with SingleTickerProvid
       _appliedDiscountVoucher = voucher;
       _discountAmount = 0;
       if (voucher == null) return;
-      final String type = voucher[VoucherContract.colDiscountType] ?? '';
-      final double value = (voucher[VoucherContract.colDiscountValue] as num?)?.toDouble() ?? 0;
-      final double? maxDiscount = (voucher[VoucherContract.colMaxDiscount] as num?)?.toDouble();
+      final String type = voucher['discount_type'] ?? '';
+      final double value = (voucher['discount_value'] as num?)?.toDouble() ?? 0;
+      final double? maxDiscount = (voucher['max_discount'] as num?)?.toDouble();
       switch (type) {
         case 'percent':
           final calculated = (_subTotal * value / 100);
@@ -544,7 +548,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> with SingleTickerProvid
     required String type,
     required VoidCallback onRemove,
   }) {
-    final code = voucher[VoucherContract.colCode] ?? '';
+    final code = voucher['code'] ?? '';
     final isShipping = type == 'shipping';
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
@@ -825,11 +829,23 @@ class _CheckoutScreenState extends State<CheckoutScreen> with SingleTickerProvid
     if (!stockValid) return;
     final authProvider = context.read<AuthProvider>();
     final cartProvider = context.read<CartProvider>();
-    final orderProvider = context.read<OrderProvider>();
     final userId = authProvider.currentUser?.id;
     final cart = cartProvider.cart;
     if (userId == null || cart == null || items.isEmpty) return;
+
+    // Step 1: Show payment gateway loading overlay
     setState(() => _isSubmitting = true);
+
+    // Step 2: Simulate payment gateway API call (2 seconds)
+    final paymentText = _selectedPaymentMethod == 'BANKING'
+        ? 'Đang kết nối cổng thanh toán...'
+        : 'Đang xử lý đơn hàng...';
+    await Future.delayed(const Duration(seconds: 2));
+
+    if (!mounted) return;
+
+    // Step 3: Place the actual order
+    final orderProvider = context.read<OrderProvider>();
     final success = await orderProvider.placeOrder(
       userId: userId,
       cartId: cart.id,
@@ -841,65 +857,57 @@ class _CheckoutScreenState extends State<CheckoutScreen> with SingleTickerProvid
       paymentMethod: _selectedPaymentMethod,
       addressId: _selectedAddress!.id,
     );
+
     if (!mounted) return;
     setState(() => _isSubmitting = false);
+
     if (success) {
+      // Step 4: Deduct voucher usage
       if (_appliedDiscountVoucher != null) {
         final voucherId = _appliedDiscountVoucher!['id'] as String?;
-        if (voucherId != null) await _voucherDao.decrementUsageLimit(voucherId);
+        if (voucherId != null) await context.read<VoucherProvider>().decrementUsageLimit(voucherId);
       }
       if (_appliedShippingVoucher != null) {
         final voucherId = _appliedShippingVoucher!['id'] as String?;
-        if (voucherId != null) await _voucherDao.decrementUsageLimit(voucherId);
+        if (voucherId != null) await context.read<VoucherProvider>().decrementUsageLimit(voucherId);
       }
-      await _notificationService.showOrderSuccess(
-        title: 'Đặt hàng thành công!',
-        body: 'Cảm ơn bạn đã mua sắm.',
-        payload: 'order_list',
-      );
-      // Chỉ xóa các sản phẩm được chọn khỏi giỏ hàng (giữ lại items chưa chọn)
-      for (var item in items) {
-        await cartProvider.removeItem(item.id);
-      }
-      cartProvider.clearSelectedItems();
-      await orderProvider.loadMyOrders(userId);
-      if (!mounted) return;
+
+      // Step 5: Show beautiful success dialog
       showDialog(
+        barrierDismissible: false,
         context: context,
-        builder: (ctx) => AlertDialog(
-          backgroundColor: Theme.of(context).colorScheme.surface,
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 86,
-                height: 86,
-                decoration: BoxDecoration(
-                  color: AppColors.success.withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.check_rounded, color: AppColors.success, size: 54),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                'Đặt hàng thành công!',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                Navigator.pushReplacementNamed(context, RouteNames.orderList);
-              },
-              child: const Text('XEM ĐƠN HÀNG', style: TextStyle(color: AppColors.primary)),
-            ),
-          ],
+        builder: (ctx) => _SuccessDialog(
+          onHomePressed: () async {
+            // Clear cart items
+            for (var item in items) {
+              await cartProvider.removeItem(item.id);
+            }
+            cartProvider.clearSelectedItems();
+            await orderProvider.loadMyOrders(userId);
+            await _notificationService.showOrderSuccess(
+              title: 'Đặt hàng thành công!',
+              body: 'Cảm ơn bạn đã mua sắm.',
+              payload: 'order_list',
+            );
+            if (!mounted) return;
+            Navigator.pop(ctx);
+            Navigator.pushNamedAndRemoveUntil(context, RouteNames.home, (route) => false);
+          },
+          onViewOrderPressed: () async {
+            for (var item in items) {
+              await cartProvider.removeItem(item.id);
+            }
+            cartProvider.clearSelectedItems();
+            await orderProvider.loadMyOrders(userId);
+            await _notificationService.showOrderSuccess(
+              title: 'Đặt hàng thành công!',
+              body: 'Cảm ơn bạn đã mua sắm.',
+              payload: 'order_list',
+            );
+            if (!mounted) return;
+            Navigator.pop(ctx);
+            Navigator.pushReplacementNamed(context, RouteNames.orderList);
+          },
         ),
       );
     }
@@ -953,26 +961,171 @@ class _CheckoutScreenState extends State<CheckoutScreen> with SingleTickerProvid
   Widget _buildLoadingOverlay(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Positioned.fill(
-      child: AnimatedOpacity(
-        opacity: _isSubmitting ? 1 : 0,
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeInOut,
-        child: Container(
-          color: colorScheme.onSurface.withValues(alpha: 0.2),
-          alignment: Alignment.center,
+      child: Container(
+        color: Colors.black.withValues(alpha: 0.55),
+        child: Center(
           child: Container(
-            width: 180,
-            padding: const EdgeInsets.all(16),
+            width: 220,
+            padding: const EdgeInsets.all(28),
             decoration: BoxDecoration(
               color: colorScheme.surface,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _ShimmerBox(controller: _shimmerController, width: 120, height: 12, borderRadius: 8),
+                SizedBox(
+                  width: 48,
+                  height: 48,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 3,
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  _selectedPaymentMethod == 'BANKING'
+                      ? 'Đang kết nối cổng thanh toán...'
+                      : 'Đang xử lý đơn hàng...',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: colorScheme.onSurface,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Vui lòng chờ trong giây lát',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: colorScheme.onSurfaceVariant,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ==================== SUCCESS DIALOG ====================
+class _SuccessDialog extends StatefulWidget {
+  final VoidCallback onHomePressed;
+  final VoidCallback onViewOrderPressed;
+
+  const _SuccessDialog({
+    required this.onHomePressed,
+    required this.onViewOrderPressed,
+  });
+
+  @override
+  State<_SuccessDialog> createState() => _SuccessDialogState();
+}
+
+class _SuccessDialogState extends State<_SuccessDialog> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scaleAnimation;
+  late final Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
+    _scaleAnimation = CurvedAnimation(parent: _controller, curve: Curves.elasticOut);
+    _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return ScaleTransition(
+      scale: _scaleAnimation,
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.all(28),
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.12),
+                  blurRadius: 32,
+                  offset: const Offset(0, 12),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 90,
+                  height: 90,
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 60),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Đặt hàng thành công!',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Cảm ơn bạn đã mua sắm tại Hoa Sen Đá.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: colorScheme.onSurfaceVariant,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
+                    ),
+                    onPressed: widget.onHomePressed,
+                    child: const Text('VỀ TRANG CHỦ', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                  ),
+                ),
                 const SizedBox(height: 10),
-                _ShimmerBox(controller: _shimmerController, width: 90, height: 10, borderRadius: 8),
+                TextButton(
+                  onPressed: widget.onViewOrderPressed,
+                  child: Text('XEM ĐƠN HÀNG', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)),
+                ),
               ],
             ),
           ),
@@ -1007,7 +1160,6 @@ class _VoucherBottomSheet extends StatefulWidget {
 }
 
 class _VoucherBottomSheetState extends State<_VoucherBottomSheet> with SingleTickerProviderStateMixin {
-  final VoucherDao _voucherDao = VoucherDao();
   late TabController _tabController;
   List<Map<String, dynamic>> _discountVouchers = [];
   List<Map<String, dynamic>> _shippingVouchers = [];
@@ -1028,11 +1180,11 @@ class _VoucherBottomSheetState extends State<_VoucherBottomSheet> with SingleTic
 
   Future<void> _loadVouchers() async {
     try {
-      final discountVouchers = await _voucherDao.getActiveDiscountVouchers();
-      final shippingVouchers = await _voucherDao.getActiveShippingVouchers();
+      final voucherProvider = context.read<VoucherProvider>();
+      await voucherProvider.loadActiveVouchers();
       setState(() {
-        _discountVouchers = discountVouchers;
-        _shippingVouchers = shippingVouchers;
+        _discountVouchers = voucherProvider.discountVouchers;
+        _shippingVouchers = voucherProvider.shippingVouchers;
         _isLoading = false;
       });
     } catch (e) {
@@ -1152,7 +1304,20 @@ class _VoucherBottomSheetState extends State<_VoucherBottomSheet> with SingleTic
   Widget _buildVoucherList(List<Map<String, dynamic>> vouchers, String type) {
     final colorScheme = Theme.of(context).colorScheme;
     if (_isLoading) {
-      return Center(child: CircularProgressIndicator(color: AppColors.primary));
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 32,
+              height: 32,
+              child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 3),
+            ),
+            const SizedBox(height: 12),
+            Text('Đang tải voucher...', style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 14)),
+          ],
+        ),
+      );
     }
     if (vouchers.isEmpty) {
       return Center(
@@ -1182,14 +1347,14 @@ class _VoucherBottomSheetState extends State<_VoucherBottomSheet> with SingleTic
 
   Widget _buildVoucherItem(Map<String, dynamic> voucher, String type) {
     final colorScheme = Theme.of(context).colorScheme;
-    final discountType = voucher[VoucherContract.colDiscountType] ?? '';
-    final discountValue = (voucher[VoucherContract.colDiscountValue] as num?)?.toDouble() ?? 0;
-    final minOrder = (voucher[VoucherContract.colMinOrderValue] as num?)?.toDouble() ?? 0;
-    final code = voucher[VoucherContract.colCode] ?? '';
-    final name = voucher[VoucherContract.colName] ?? '';
-    final quantity = voucher[VoucherContract.colQuantity] as int? ?? 0;
-    final usedCount = voucher[VoucherContract.colUsedCount] as int? ?? 0;
-    final endDate = voucher[VoucherContract.colEndDate] as int?;
+    final discountType = voucher['discount_type'] ?? '';
+    final discountValue = (voucher['discount_value'] as num?)?.toDouble() ?? 0;
+    final minOrder = (voucher['min_order_value'] as num?)?.toDouble() ?? 0;
+    final code = voucher['code'] ?? '';
+    final name = voucher['name'] ?? '';
+    final quantity = voucher['quantity'] as int? ?? 0;
+    final usedCount = voucher['used_count'] as int? ?? 0;
+    final endDate = voucher['end_date'] as int?;
     final isNoExpiry = endDate == null;
     final isUsageExhausted = usedCount >= quantity;
     final isExpired = !isNoExpiry && DateTime.now().millisecondsSinceEpoch > endDate;
@@ -1197,8 +1362,8 @@ class _VoucherBottomSheetState extends State<_VoucherBottomSheet> with SingleTic
     final isShipping = type == 'shipping';
     final isEligible = widget.subTotal >= minOrder;
     final isApplied = isShipping
-        ? (widget.appliedShippingVoucher?[VoucherContract.colCode] as String?) == code
-        : (widget.appliedDiscountVoucher?[VoucherContract.colCode] as String?) == code;
+        ? (widget.appliedShippingVoucher?['code'] as String?) == code
+        : (widget.appliedDiscountVoucher?['code'] as String?) == code;
 
     return Opacity(
       opacity: isDisabled ? 0.5 : 1.0,

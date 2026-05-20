@@ -5,6 +5,7 @@ import '../../../theme/app_colors.dart';
 import '../../../utils/theme_helper.dart';
 import '../../../database/daos/voucher_dao.dart';
 import '../../../database/contracts/voucher_contract.dart';
+import '../../../widgets/common/shimmer_box.dart';
 
 class AdminVoucherScreen extends StatefulWidget {
   const AdminVoucherScreen({Key? key}) : super(key: key);
@@ -126,7 +127,14 @@ class _AdminVoucherScreenState extends State<AdminVoucherScreen> {
         ],
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator(color: isDark ? AppColors.primary : AppColors.primary))
+          ? ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: 4,
+              itemBuilder: (context, index) => const Padding(
+                padding: EdgeInsets.only(bottom: 12),
+                child: ShimmerListItem(height: 100, borderRadius: 12),
+              ),
+            )
           : _vouchers.isEmpty
               ? _buildEmptyState(isDark)
               : _buildVoucherList(isDark),

@@ -46,21 +46,34 @@ class ProductCard extends StatelessWidget {
               Expanded(
                 child: Stack(
                   children: [
-                    Container(
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: isDark ? AppColors.darkCard : AppColors.background,
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                        child: product.primaryImage != null && product.primaryImage!.isNotEmpty
-                            ? Image.asset(
-                                product.primaryImage!,
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                height: double.infinity,
-                                errorBuilder: (context, error, stackTrace) => Container(
+                    Hero(
+                      tag: 'product_image_${product.id}',
+                      child: Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: isDark ? AppColors.darkCard : AppColors.background,
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                          child: product.primaryImage != null && product.primaryImage!.isNotEmpty
+                              ? Image.asset(
+                                  product.primaryImage!,
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                  errorBuilder: (context, error, stackTrace) => Container(
+                                    color: isDark ? AppColors.darkBorder : Colors.grey[300],
+                                    child: Center(
+                                      child: Icon(
+                                        Icons.image,
+                                        size: 40,
+                                        color: isDark ? AppColors.darkTextSecondary : Colors.grey,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              : Container(
                                   color: isDark ? AppColors.darkBorder : Colors.grey[300],
                                   child: Center(
                                     child: Icon(
@@ -70,17 +83,7 @@ class ProductCard extends StatelessWidget {
                                     ),
                                   ),
                                 ),
-                              )
-                            : Container(
-                                color: isDark ? AppColors.darkBorder : Colors.grey[300],
-                                child: Center(
-                                  child: Icon(
-                                    Icons.image,
-                                    size: 40,
-                                    color: isDark ? AppColors.darkTextSecondary : Colors.grey,
-                                  ),
-                                ),
-                              ),
+                        ),
                       ),
                     ),
                     Positioned(

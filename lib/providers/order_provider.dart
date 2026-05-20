@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../database/repositories/order_repository.dart';
 
 class OrderProvider with ChangeNotifier {
@@ -81,6 +83,35 @@ class OrderProvider with ChangeNotifier {
 
     // Gọi thông qua Repository
     final success = await orderRepository.createOrder(orderMap, orderItemsMap, cartId);
+
+    // Background sync to Firestore for realtime admin tracking
+    if (success) {
+      final uid = firebase_auth.FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        try {
+          await FirebaseFirestore.instance.collection('orders').add({
+            'local_order_id': orderId,
+            'uid': uid,
+            'total_amount': totalAmount,
+            'payment_method': paymentMethod,
+            'status': 'PENDING',
+            'order_number': orderMap['order_number'],
+            'shipping_fee': shippingFee,
+            'discount': discountAmount,
+            'created_at': FieldValue.serverTimestamp(),
+            'items': cartItems.map((item) => {
+              'product_id': item['product_id'],
+              'product_name': item['product_name'] ?? 'San pham',
+              'quantity': item['quantity'],
+              'price': item['price'] ?? 0,
+            }).toList(),
+          });
+          print('Firestore sync: order $orderId synced successfully');
+        } catch (e) {
+          print('Firestore sync failed (non-critical): $e');
+        }
+      }
+    }
 
     _isLoading = false;
     notifyListeners();

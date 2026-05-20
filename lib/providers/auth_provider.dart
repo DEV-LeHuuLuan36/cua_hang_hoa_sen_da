@@ -1,6 +1,8 @@
 // lib/providers/auth_provider.dart
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+
 import '../models/user/user.dart';
 import '../models/user/customer.dart';
 import '../database/repositories/auth_repository.dart';
@@ -20,31 +22,44 @@ class AuthProvider extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated => _currentUser != null;
 
-  // Tự động khôi phục session
+  // Auto-restore session: check Firebase persisted session first, then SQLite
   Future<void> tryAutoLogin() async {
+    final fbUser = firebase_auth.FirebaseAuth.instance.currentUser;
+    if (fbUser != null) {
+      _currentUser = await _authRepository.getUserProfile(fbUser.uid);
+      if (_currentUser != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('userId', fbUser.uid);
+        notifyListeners();
+        return;
+      }
+    }
+
     final prefs = await SharedPreferences.getInstance();
-    final userId = prefs.getString('userId');
-    if (userId != null) {
-      _currentUser = await _authRepository.getUserProfile(userId);
+    final localUserId = prefs.getString('userId');
+    if (localUserId != null) {
+      _currentUser = await _authRepository.getUserProfile(localUserId);
       notifyListeners();
     }
   }
 
-  Future<bool> login(String username, String password) async {
+  Future<bool> login(String email, String password) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
-    final user = await _authRepository.login(username, password);
+    final (user, error) = await _authRepository.login(email, password);
+
     if (user != null) {
       _currentUser = user;
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('userId', user.id);
+      await prefs.setBool('hasLoggedInBefore', true);
       _isLoading = false;
       notifyListeners();
       return true;
     } else {
-      _errorMessage = "Sai tài khoản hoặc mật khẩu";
+      _errorMessage = error ?? 'Dang nhap that bai.';
       _isLoading = false;
       notifyListeners();
       return false;
@@ -69,20 +84,42 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  void logout() async {
+  Future<bool> loginWithGoogle() async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    final (user, error) = await _authRepository.loginWithGoogle();
+
+    if (user != null) {
+      _currentUser = user;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('userId', user.id);
+      await prefs.setBool('hasLoggedInBefore', true);
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } else {
+      _errorMessage = error ?? 'Dang nhap Google that bai.';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<void> logout() async {
+    await _authRepository.logout();
     _currentUser = null;
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('userId');
     notifyListeners();
   }
 
-  // Cập nhật avatar
   Future<bool> updateAvatar(String avatarUrl) async {
     if (_currentUser == null) return false;
 
-    // Đổi thành int vì UserDao trả về số dòng bị ảnh hưởng
-    final int rowsAffected = await _userDao.updateAvatar(_currentUser!.id, avatarUrl);
-    final bool success = rowsAffected > 0; // Nếu lớn hơn 0 nghĩa là cập nhật thành công
+    final rowsAffected = await _userDao.updateAvatar(_currentUser!.id, avatarUrl);
+    final success = rowsAffected > 0;
 
     if (success) {
       _currentUser = await _authRepository.getUserProfile(_currentUser!.id);
@@ -91,12 +128,11 @@ class AuthProvider extends ChangeNotifier {
     return success;
   }
 
-  // Cập nhật thông tin profile
   Future<bool> updateProfile(String fullName, String phone) async {
     if (_currentUser == null) return false;
 
-    final int rowsAffected = await _userDao.updateUserProfile(_currentUser!.id, fullName, phone);
-    final bool success = rowsAffected > 0;
+    final rowsAffected = await _userDao.updateUserProfile(_currentUser!.id, fullName, phone);
+    final success = rowsAffected > 0;
 
     if (success) {
       _currentUser = await _authRepository.getUserProfile(_currentUser!.id);
@@ -105,17 +141,21 @@ class AuthProvider extends ChangeNotifier {
     return success;
   }
 
-  // Xác thực mật khẩu cũ
   Future<bool> verifyOldPassword(String oldPassword) async {
     if (_currentUser == null) return false;
     return await _userDao.verifyPassword(_currentUser!.id, oldPassword);
   }
 
-  // Đổi mật khẩu
   Future<bool> changePassword(String newPassword) async {
     if (_currentUser == null) return false;
 
-    final bool success = await _userDao.updatePassword(_currentUser!.id, newPassword);
+    try {
+      await firebase_auth.FirebaseAuth.instance.currentUser?.updatePassword(newPassword);
+    } catch (e) {
+      return false;
+    }
+
+    final success = await _userDao.updatePassword(_currentUser!.id, newPassword);
     if (success) {
       _currentUser = await _authRepository.getUserProfile(_currentUser!.id);
       notifyListeners();
@@ -123,13 +163,31 @@ class AuthProvider extends ChangeNotifier {
     return success;
   }
 
-  // Xóa tài khoản
+  Future<bool> sendPasswordResetEmail(String email) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await firebase_auth.FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = 'Không thể gửi mã khôi phục. Vui lòng kiểm tra lại email.';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<bool> deleteAccount() async {
     if (_currentUser == null) return false;
 
-    final bool success = await _userDao.deleteAccount(_currentUser!.id);
+    final success = await _userDao.deleteAccount(_currentUser!.id);
     if (success) {
-      logout();
+      await firebase_auth.FirebaseAuth.instance.currentUser?.delete();
+      await logout();
     }
     return success;
   }
