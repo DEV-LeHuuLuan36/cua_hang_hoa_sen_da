@@ -1,70 +1,27 @@
-# 🌵 Succulent Store - E-Commerce Mobile App
+# 🌵 Succulent Store - Hybrid Cloud E-Commerce Mobile App
 
 ![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=for-the-badge&logo=Flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/dart-%230175C2.svg?style=for-the-badge&logo=dart&logoColor=white)
 ![SQLite](https://img.shields.io/badge/sqlite-%2307405e.svg?style=for-the-badge&logo=sqlite&logoColor=white)
+![Firebase](https://img.shields.io/badge/Firebase-%23039BE5.svg?style=for-the-badge&logo=Firebase&logoColor=white)
 
-A Flutter-based mobile e-commerce application focused on responsive UI design, local data persistence, and scalable state management.
-
----
-
-## ✨ Features
-
-- Product browsing and shopping cart management
-- Wishlist and user session handling
-- Google Maps integration for delivery address selection
-- Dynamic Dark/Light theme switching
-- Responsive mobile UI across multiple screen sizes
-- Simple admin interface for inventory and order management
-- Offline local data persistence using SQLite
+A production-ready Flutter mobile e-commerce application engineered with a **Hybrid Cloud Architecture** (Offline-First local storage seamlessly synced with real-time cloud infrastructure) and high-fidelity UI/UX interactions.
 
 ---
 
-## 💡 Motivation
+## ✨ Core Features
 
-This project was built to strengthen my understanding of Flutter state management, local database architecture, and responsive mobile UI development through a practical, real-world e-commerce scenario.
+- **Hybrid Synchronization:** Instantly records orders to SQLite for ultra-low latency and fires asynchronous real-time background syncs to Cloud Firestore.
+- **Advanced Identity Management:** Complete Firebase Authentication integration featuring secure Email/Password registration and seamless Google Sign-In.
+- **Premium Choreographed UI:** Custom Skeleton Shimmer loading screens across core pages, context-aware `EmptyStateWidget` handlers, and smooth `Hero` asset animations.
+- **Production-Level Android Stability:** Custom operating-system-level event interceptors protecting the application state from accidental route-popping.
+- **Dynamic Session & Personalization:** Local key-value state monitoring using SharedPreferences supporting unified theme state switches.
 
 ---
 
 ## 🎥 Demo Video
 
 <img width="400" height="888" alt="demo" src="https://github.com/user-attachments/assets/cefa2467-06ac-4e96-a25a-ca5e93252e9f" />
----
-
-## 🛠 Architecture & Technologies
-
-This project is structured with maintainability and clean code principles in mind:
-
-- **Design Pattern:** Implemented the **DAO (Data Access Object) & Repository Pattern** to separate business logic from data access, improving maintainability and separation of concerns.
-- **State Management:** Utilized `Provider` to manage application state efficiently across multiple screens.
-- **Local Storage:** Built on top of **SQLite** (`sqflite`) for local offline data persistence.
-- **Responsive UI:** Designed reusable widgets and adaptive layouts for consistent rendering across devices.
-
----
-
-## 📦 Main Dependencies
-
-- `provider` — State management
-- `sqflite` — SQLite database wrapper
-- `Maps_flutter` — Google Maps integration
-- `shared_preferences` — Local key-value storage
-- `shimmer` — Skeleton loading effects
-
----
-
-## 🧠 Technical Challenges & Solutions
-
-### State Management Optimization
-Optimized `Provider` state updates to minimize unnecessary widget rebuilds, especially within shopping cart and checkout flows.
-
-### Component Reusability
-Structured reusable widgets such as custom product cards, shimmer loaders, and buttons to reduce code duplication and improve maintainability.
-
-### Data Persistence
-Implemented SQLite-based local persistence for offline cart management, wishlist handling, and user session storage.
-
-### UI/UX Implementation
-Implemented responsive layouts with Google Maps integration, dynamic theme switching, and adaptive rendering across different screen sizes.
 
 ---
 
@@ -86,50 +43,56 @@ Implemented responsive layouts with Google Maps integration, dynamic theme switc
 
 ---
 
-## 🚀 Getting Started
+## 💡 Architecture & Design Patterns
 
-Run the following commands to set up the project locally:
+This ecosystem enforces clean code guidelines and decoupling mechanisms designed for enterprise scaling:
+- **Data Access Separation:** Utilizes the **DAO (Data Access Object) & Repository Pattern** to separate data access contracts from execution semantics.
+- **State Topology:** Managed globally through `Provider` listeners scoped efficiently to isolate rendering clusters and reduce widget paint footprints.
+- **Local Persistence layer:** Built upon structured relational **SQLite** schema contracts for secure offline resilience.
 
-    git clone [https://github.com/DEV-LeHuuLuan36/cua_hang_hoa_sen_da.git](https://github.com/DEV-LeHuuLuan36/cua_hang_hoa_sen_da.git)
-    cd cua_hang_hoa_sen_da
-    flutter pub get
-    flutter run
+---
+
+## 📦 Core Dependencies
+
+- `firebase_core` & `firebase_auth` — Enterprise Cloud Identity Layer
+- `cloud_firestore` — Cloud Data Streaming & Backend Sync Engine
+- `google_sign_in` — OAuth2 Ecosystem Integration
+- `provider` — Reactive App State Architecture
+- `sqflite` — Local Relational Embedded Cache Storage
+- `shimmer` — High-Fidelity Motion Loading Layout States
+- `flutter_native_splash` & `flutter_launcher_icons` — Native Hardware Assets Compilation
+
+---
+
+## 🧠 Technical Case Studies & Solutions
+
+### 1. Hybrid Offline-First Sync & Cost Optimization (Firebase $0 Budget)
+* **Challenge:** Direct reliance on real-time cloud databases spikes operation transaction costs and causes network latency dependencies during checkouts.
+* **Solution:** Engineered a background hybrid sync flow. When an order is created, it is written immediately to local SQLite databases. If a valid network connection exists, the application fires a non-blocking asynchronous payload push to Cloud Firestore, enabling offline reliability and minimizing continuous billing reads/writes.
+
+### 2. Guarding Ecosystem Routing from Fragmented Android Pops
+* **Challenge:** Pressing the device hardware/virtual Back gesture on initial authentication layers triggered empty route stacks, creating app vulnerabilities or blank screen traps.
+* **Solution:** Integrated a specialized hardware-level navigation guard using Flutter’s modern `PopScope`. It intercept background pops, evaluates continuous trigger timings, prompts a custom Toast notice ("Nhấn lần nữa để thoát"), and safe-exits the app process through OS-level `SystemNavigator.pop` calls upon double-tap.
+
+### 3. Native Splash Scaling & Layout Fluidity Fixes
+* **Challenge:** Default Android splash setups distorted application vector art into massive, pixelated over-stretched image maps.
+* **Solution:** Re-configured the underlying Android res compilation assets engine via `pubspec.yaml`, injecting native hardware `gravity: center` parameters onto an explicit white `#FFFFFF` backdrop to enforce strict, un-stretched minimalist branding ratios scaling natively across device resolutions.
 
 ---
 
 ## 📂 Folder Structure
 
-    lib/
-    ├── database/
-    │   ├── contracts/       # Database table schemas
-    │   ├── daos/            # Raw SQLite query handlers
-    │   └── repositories/    # Data abstraction layer
-    ├── models/              # Data models and enums
-    ├── providers/           # State management logic
-    ├── routes/              # Application navigation
-    ├── screens/             # UI screens (Customer/Admin/Auth)
-    ├── services/            # External services and integrations
-    ├── theme/               # Theme and typography configuration
-    ├── utils/               # Constants and helper functions
-    └── widgets/             # Reusable UI components
-
----
-
-## 🧪 Future Technical Improvements
-
-This project is continuously evolving. Planned future enhancements include:
-
-* Implementing a remote API layer using Dio/http
-* Introducing BLoC or Riverpod for scalable state management
-* Adding unit tests and widget tests
-* Integrating Firebase Authentication
-* Adding push notifications for order updates
-* Implementing payment gateway support
-
----
-
-## 👨‍💻 Author
-
-**Le Huu Luan**
-
-* GitHub: [https://github.com/DEV-LeHuuLuan36](https://github.com/DEV-LeHuuLuan36)
+```text
+lib/
+├── database/
+│   ├── contracts/       # Relational SQLite schema constraints
+│   ├── daos/            # Low-level SQLite database access executors
+│   └── repositories/    # Hybrid data abstraction layer & cloud syncer
+├── models/              # Immutable data objects, serialization & maps
+├── providers/           # Reactive state lifecycle controllers
+├── routes/              # Central declarative app navigation router
+├── screens/             # UI Layer screens (Customer/Admin/Auth matrices)
+├── services/            # System services & background network integrations
+├── theme/               # Visual design tokens & color configurations
+├── utils/               # Static global constants & cross-cutting tools
+└── widgets/             # Granular atomic & reusable layout blocks
