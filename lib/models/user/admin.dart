@@ -53,17 +53,18 @@ class Admin extends User {
   }
 
   factory Admin.fromMap(Map<String, dynamic> map) {
+    final now = DateTime.now().millisecondsSinceEpoch;
     return Admin(
-      id: map[UserContract.colId],
-      username: map[UserContract.colUsername],
-      password: map[UserContract.colPassword],
-      fullName: map[UserContract.colFullName],
-      email: map[UserContract.colEmail],
-      phone: map[UserContract.colPhone],
-      avatar: map[UserContract.colAvatar],
-      createdAt: map[UserContract.colCreatedAt],
-      updatedAt: map[UserContract.colUpdatedAt],
-      lastLogin: map[UserContract.colLastLogin],
+      id: map[UserContract.colId] as String? ?? '',
+      username: map[UserContract.colUsername] as String? ?? 'admin',
+      password: map[UserContract.colPassword] as String? ?? '',
+      fullName: map[UserContract.colFullName] as String? ?? 'Admin',
+      email: map[UserContract.colEmail] as String? ?? 'admin@gmail.com',
+      phone: map[UserContract.colPhone] as String? ?? '',
+      avatar: map[UserContract.colAvatar] as String?,
+      createdAt: map[UserContract.colCreatedAt] as int? ?? now,
+      updatedAt: map[UserContract.colUpdatedAt] as int? ?? now,
+      lastLogin: map[UserContract.colLastLogin] as int?,
     );
   }
 }

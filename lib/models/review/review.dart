@@ -35,15 +35,16 @@ class ReviewModel {
   }
 
   factory ReviewModel.fromMap(Map<String, dynamic> map) {
+    final now = DateTime.now().millisecondsSinceEpoch;
     return ReviewModel(
-      id: map[ReviewContract.colId],
-      userId: map[ReviewContract.colUserId],
-      productId: map[ReviewContract.colProductId],
-      orderId: map[ReviewContract.colOrderId],
-      rating: map[ReviewContract.colRating],
-      comment: map[ReviewContract.colComment],
-      createdAt: map[ReviewContract.colCreatedAt],
-      updatedAt: map[ReviewContract.colUpdatedAt],
+      id: map[ReviewContract.colId] as String? ?? '',
+      userId: map[ReviewContract.colUserId] as String? ?? '',
+      productId: map[ReviewContract.colProductId] as String? ?? '',
+      orderId: map[ReviewContract.colOrderId] as String? ?? '',
+      rating: map[ReviewContract.colRating] as int? ?? 5,
+      comment: map[ReviewContract.colComment] as String?,
+      createdAt: map[ReviewContract.colCreatedAt] as int? ?? now,
+      updatedAt: map[ReviewContract.colUpdatedAt] as int? ?? now,
     );
   }
 }

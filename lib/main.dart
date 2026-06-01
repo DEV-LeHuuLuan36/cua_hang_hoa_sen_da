@@ -4,9 +4,9 @@ import 'package:provider/provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'routes/app_routes.dart';
-import 'utils/constants/route_names.dart';
 import 'services/notification_service.dart';
 import 'theme/app_theme.dart';
+import 'screens/auth/auth_gate.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
@@ -131,14 +131,20 @@ class _InitializingApp extends StatelessWidget {
       future: initFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const LoadingScreen();
+          return const MaterialApp(
+            debugShowCheckedModeBanner: false,
+            home: LoadingScreen(),
+          );
         }
 
         if (snapshot.hasError) {
-          return Scaffold(
-            backgroundColor: Colors.white,
-            body: Center(
-              child: Text('Lỗi khởi tạo: ${snapshot.error}'),
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            home: Scaffold(
+              backgroundColor: Colors.white,
+              body: Center(
+                child: Text('Lỗi khởi tạo: ${snapshot.error}'),
+              ),
             ),
           );
         }
@@ -172,7 +178,6 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
-    final auth = Provider.of<AuthProvider>(context);
 
     return MaterialApp(
       navigatorKey: NotificationService.navigatorKey,
@@ -181,7 +186,7 @@ class MyApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeProvider.themeMode,
-      initialRoute: auth.isAuthenticated ? RouteNames.home : RouteNames.login,
+      home: const AuthGate(),
       onGenerateRoute: AppRoutes.generateRoute,
     );
   }

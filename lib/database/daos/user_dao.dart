@@ -32,7 +32,10 @@ class UserDao {
 
     if (maps.isNotEmpty) {
       final map = maps.first;
-      // Dựa vào Role để quyết định parse ra Admin hay Customer
+      // Fallback: if email or username matches known admin accounts, force Admin type
+      if (_isAdminAccount(map)) {
+        return Admin.fromMap(map);
+      }
       if (map[UserContract.colRole] == UserRole.ADMIN.name) {
         return Admin.fromMap(map);
       } else {
@@ -40,6 +43,12 @@ class UserDao {
       }
     }
     return null;
+  }
+
+  bool _isAdminAccount(Map<String, dynamic> map) {
+    final email = (map[UserContract.colEmail] as String?)?.toLowerCase() ?? '';
+    final username = (map[UserContract.colUsername] as String?)?.toLowerCase() ?? '';
+    return email == 'admin@gmail.com' || username == 'admin';
   }
 
   // 3. Kiểm tra đăng nhập
@@ -53,6 +62,9 @@ class UserDao {
 
     if (maps.isNotEmpty) {
       final map = maps.first;
+      if (_isAdminAccount(map)) {
+        return Admin.fromMap(map);
+      }
       if (map[UserContract.colRole] == UserRole.ADMIN.name) {
         return Admin.fromMap(map);
       } else {

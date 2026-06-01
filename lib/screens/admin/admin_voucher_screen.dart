@@ -257,7 +257,7 @@ class _AdminVoucherScreenState extends State<AdminVoucherScreen> {
                     children: [
                       Row(
                         children: [
-                          Text(code, style: TextStyle(color: isActive && !isExpired ? AppColors.primary : (isDark ? AppColors.darkTextSecondary : Colors.grey), fontSize: 14, fontWeight: FontWeight.w800)),
+                          Flexible(child: Text(code, style: TextStyle(color: isActive && !isExpired ? AppColors.primary : (isDark ? AppColors.darkTextSecondary : Colors.grey), fontSize: 14, fontWeight: FontWeight.w800), overflow: TextOverflow.ellipsis)),
                           const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -270,7 +270,7 @@ class _AdminVoucherScreenState extends State<AdminVoucherScreen> {
                         ],
                       ),
                       const SizedBox(height: 4),
-                      Text(name, style: TextStyle(color: ThemeHelper.textPrimary(context), fontSize: 13, fontWeight: FontWeight.w600)),
+                      Text(name, style: TextStyle(color: ThemeHelper.textPrimary(context), fontSize: 13, fontWeight: FontWeight.w600), maxLines: 2, overflow: TextOverflow.ellipsis),
                     ],
                   ),
                 ),
@@ -285,20 +285,18 @@ class _AdminVoucherScreenState extends State<AdminVoucherScreen> {
               children: [
                 Row(
                   children: [
-                    _buildInfoChip(Icons.calendar_today, isNoExpiry ? 'Không thời hạn' : 'HSD: $endDateStr', isExpired ? AppColors.error : (isDark ? AppColors.darkTextSecondary : Colors.grey[600]!)),
+                    Flexible(child: _buildInfoChip(Icons.calendar_today, isNoExpiry ? 'Không thời hạn' : 'HSD: $endDateStr', isExpired ? AppColors.error : (isDark ? AppColors.darkTextSecondary : Colors.grey[600]!))),
                     const SizedBox(width: 8),
-                    _buildInfoChip(Icons.inventory_2, '$usedCount/$quantity đã dùng', usedCount >= quantity ? AppColors.error : (isDark ? AppColors.darkTextSecondary : Colors.grey[600]!)),
+                    Flexible(child: _buildInfoChip(Icons.inventory_2, '$usedCount/$quantity đã dùng', usedCount >= quantity ? AppColors.error : (isDark ? AppColors.darkTextSecondary : Colors.grey[600]!))),
                   ],
                 ),
                 if (minOrder > 0 || (maxDiscount != null && discountType == 'percent')) ...[
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      if (minOrder > 0) _buildInfoChip(Icons.shopping_cart, 'Tối thiểu: ${_formatMoney(minOrder)}', isDark ? AppColors.darkTextSecondary : Colors.grey[600]!),
-                      if (maxDiscount != null && discountType == 'percent') ...[
-                        const SizedBox(width: 8),
-                        _buildInfoChip(Icons.remove_circle_outline, 'Max: ${_formatMoney(maxDiscount)}', isDark ? AppColors.darkTextSecondary : Colors.grey[600]!),
-                      ],
+                      if (minOrder > 0) Flexible(child: _buildInfoChip(Icons.shopping_cart, 'Tối thiểu: ${_formatMoney(minOrder)}', isDark ? AppColors.darkTextSecondary : Colors.grey[600]!)),
+                      if (minOrder > 0 && maxDiscount != null && discountType == 'percent') const SizedBox(width: 8),
+                      if (maxDiscount != null && discountType == 'percent') Flexible(child: _buildInfoChip(Icons.remove_circle_outline, 'Max: ${_formatMoney(maxDiscount)}', isDark ? AppColors.darkTextSecondary : Colors.grey[600]!)),
                     ],
                   ),
                 ],

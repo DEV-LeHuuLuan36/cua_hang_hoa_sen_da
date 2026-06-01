@@ -28,11 +28,14 @@ class FavoriteDao {
     }
   }
 
-  // 2. Lấy danh sách sản phẩm yêu thích (JOIN với products)
+  // 2. Lấy danh sách sản phẩm yêu thích (JOIN với products + lấy ảnh chính)
   Future<List<Map<String, dynamic>>> getFavoritesByUser(String userId) async {
     final database = await db;
     return await database.rawQuery('''
-      SELECT p.*, f.id as favorite_id
+      SELECT p.*, f.id as favorite_id,
+             (SELECT pi.image_url FROM product_images pi
+              WHERE pi.product_id = p.id AND pi.is_primary = 1
+              LIMIT 1) as primary_image
       FROM favorites f
       JOIN products p ON f.product_id = p.id
       WHERE f.user_id = ?

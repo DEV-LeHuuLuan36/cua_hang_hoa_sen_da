@@ -32,6 +32,10 @@ class _RecentlyViewedScreenState extends State<RecentlyViewedScreen> {
     return Scaffold(
       backgroundColor: ThemeHelper.background(context),
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: Text(
           'Đã xem gần đây',
           style: TextStyle(color: ThemeHelper.textPrimary(context)),
@@ -39,7 +43,6 @@ class _RecentlyViewedScreenState extends State<RecentlyViewedScreen> {
         backgroundColor: ThemeHelper.surface(context),
         elevation: 0,
         iconTheme: IconThemeData(color: ThemeHelper.textPrimary(context)),
-        automaticallyImplyLeading: false,
       ),
       body: Consumer<RecentlyViewedProvider>(
         builder: (context, provider, child) {

@@ -23,11 +23,12 @@ class ReviewImage {
   }
 
   factory ReviewImage.fromMap(Map<String, dynamic> map) {
+    final now = DateTime.now().millisecondsSinceEpoch;
     return ReviewImage(
-      id: map[ReviewImageContract.colId],
-      reviewId: map[ReviewImageContract.colReviewId],
-      imageUrl: map[ReviewImageContract.colImageUrl],
-      createdAt: map[ReviewImageContract.colCreatedAt],
+      id: map[ReviewImageContract.colId] as String? ?? '',
+      reviewId: map[ReviewImageContract.colReviewId] as String? ?? '',
+      imageUrl: map[ReviewImageContract.colImageUrl] as String? ?? '',
+      createdAt: map[ReviewImageContract.colCreatedAt] as int? ?? now,
     );
   }
 }

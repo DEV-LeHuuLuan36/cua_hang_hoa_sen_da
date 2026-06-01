@@ -1,4 +1,3 @@
-import '../../database/contracts/user_contract.dart';
 import '../enums/user_role.dart';
 import '../enums/membership_level.dart';
 

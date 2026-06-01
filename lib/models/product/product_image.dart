@@ -29,13 +29,14 @@ class ProductImage {
   }
 
   factory ProductImage.fromMap(Map<String, dynamic> map) {
+    final now = DateTime.now().millisecondsSinceEpoch;
     return ProductImage(
-      id: map[ProductImageContract.colId],
-      productId: map[ProductImageContract.colProductId],
-      imageUrl: map[ProductImageContract.colImageUrl],
+      id: map[ProductImageContract.colId] as String? ?? '',
+      productId: map[ProductImageContract.colProductId] as String? ?? '',
+      imageUrl: map[ProductImageContract.colImageUrl] as String? ?? '',
       isPrimary: map[ProductImageContract.colIsPrimary] == 1,
-      sortOrder: map[ProductImageContract.colSortOrder] ?? 0,
-      createdAt: map[ProductImageContract.colCreatedAt],
+      sortOrder: map[ProductImageContract.colSortOrder] as int? ?? 0,
+      createdAt: map[ProductImageContract.colCreatedAt] as int? ?? now,
     );
   }
 }

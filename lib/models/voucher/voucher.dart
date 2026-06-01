@@ -56,22 +56,23 @@ class Voucher {
   }
 
   factory Voucher.fromMap(Map<String, dynamic> map) {
+    final now = DateTime.now().millisecondsSinceEpoch;
     return Voucher(
-      id: map[VoucherContract.colId],
-      code: map[VoucherContract.colCode],
-      name: map[VoucherContract.colName],
-      description: map[VoucherContract.colDescription],
-      discountType: map[VoucherContract.colDiscountType],
-      discountValue: (map[VoucherContract.colDiscountValue] ?? 0.0).toDouble(),
-      minOrderValue: (map[VoucherContract.colMinOrderValue] ?? 0.0).toDouble(),
-      maxDiscount: map[VoucherContract.colMaxDiscount] != null ? (map[VoucherContract.colMaxDiscount]).toDouble() : null,
-      startDate: map[VoucherContract.colStartDate],
-      endDate: map[VoucherContract.colEndDate],
-      quantity: map[VoucherContract.colQuantity],
-      usedCount: map[VoucherContract.colUsedCount] ?? 0,
-      status: map[VoucherContract.colStatus] ?? 'ACTIVE',
-      createdAt: map[VoucherContract.colCreatedAt],
-      updatedAt: map[VoucherContract.colUpdatedAt],
+      id: map[VoucherContract.colId] as String? ?? '',
+      code: map[VoucherContract.colCode] as String? ?? '',
+      name: map[VoucherContract.colName] as String? ?? '',
+      description: map[VoucherContract.colDescription] as String?,
+      discountType: map[VoucherContract.colDiscountType] as String? ?? 'PERCENT',
+      discountValue: (map[VoucherContract.colDiscountValue] as num?)?.toDouble() ?? 0.0,
+      minOrderValue: (map[VoucherContract.colMinOrderValue] as num?)?.toDouble() ?? 0.0,
+      maxDiscount: (map[VoucherContract.colMaxDiscount] as num?)?.toDouble(),
+      startDate: map[VoucherContract.colStartDate] as int? ?? now,
+      endDate: map[VoucherContract.colEndDate] as int? ?? now,
+      quantity: map[VoucherContract.colQuantity] as int? ?? 0,
+      usedCount: map[VoucherContract.colUsedCount] as int? ?? 0,
+      status: map[VoucherContract.colStatus] as String? ?? 'ACTIVE',
+      createdAt: map[VoucherContract.colCreatedAt] as int? ?? now,
+      updatedAt: map[VoucherContract.colUpdatedAt] as int? ?? now,
     );
   }
 }

@@ -99,6 +99,13 @@ class _OrderListScreenState extends State<OrderListScreen> {
       itemCount: filteredOrders.length,
       itemBuilder: (context, index) {
         final order = filteredOrders[index];
+        final createdAtMs = order['created_at'] as int?;
+        final dateStr = createdAtMs != null
+            ? DateTime.fromMillisecondsSinceEpoch(createdAtMs).toString().substring(0, 16)
+            : '—';
+        final paymentMethod = order['payment_method']?.toString() ?? 'COD';
+        final total = (order['total'] as num?)?.toInt() ?? 0;
+
         return Container(
           margin: const EdgeInsets.only(bottom: 16),
           padding: const EdgeInsets.all(16),
@@ -119,7 +126,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Mã ĐH: #${order['order_number']}',
+                    'Mã ĐH: #${order['order_number'] ?? '—'}',
                     style: TextStyle(fontWeight: FontWeight.bold, color: ThemeHelper.textPrimary(context)),
                   ),
                   Text(
@@ -132,12 +139,12 @@ class _OrderListScreenState extends State<OrderListScreen> {
               ),
               Divider(height: 24, color: ThemeHelper.divider(context)),
               Text(
-                'Ngày đặt: ${DateTime.fromMillisecondsSinceEpoch(order['created_at']).toString().substring(0, 16)}',
+                'Ngày đặt: $dateStr',
                 style: TextStyle(color: ThemeHelper.textSecondary(context)),
               ),
               const SizedBox(height: 8),
               Text(
-                'Phương thức: ${order['payment_method']}',
+                'Phương thức: $paymentMethod',
                 style: TextStyle(color: ThemeHelper.textSecondary(context)),
               ),
               Divider(height: 24, color: ThemeHelper.divider(context)),
@@ -146,7 +153,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
                 children: [
                   Text('Thành tiền:', style: TextStyle(color: ThemeHelper.textSecondary(context))),
                   Text(
-                    '${order['total']}đ',
+                    '$totalđ',
                     style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryDark),
                   ),
                 ],

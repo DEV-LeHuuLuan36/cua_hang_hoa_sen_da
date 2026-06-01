@@ -36,14 +36,14 @@ class OrderItem {
 
   factory OrderItem.fromMap(Map<String, dynamic> map) {
     return OrderItem(
-      id: map[OrderItemContract.colId],
-      orderId: map[OrderItemContract.colOrderId],
-      productId: map[OrderItemContract.colProductId],
-      productName: map[OrderItemContract.colProductName],
-      variant: map[OrderItemContract.colVariant],
-      quantity: map[OrderItemContract.colQuantity],
-      price: (map[OrderItemContract.colPrice] ?? 0.0).toDouble(),
-      total: (map[OrderItemContract.colTotal] ?? 0.0).toDouble(),
+      id: map[OrderItemContract.colId] as String? ?? '',
+      orderId: map[OrderItemContract.colOrderId] as String? ?? '',
+      productId: map[OrderItemContract.colProductId] as String? ?? '',
+      productName: map[OrderItemContract.colProductName] as String? ?? 'Sản phẩm',
+      variant: map[OrderItemContract.colVariant] as String?,
+      quantity: map[OrderItemContract.colQuantity] as int? ?? 0,
+      price: (map[OrderItemContract.colPrice] as num?)?.toDouble() ?? 0.0,
+      total: (map[OrderItemContract.colTotal] as num?)?.toDouble() ?? 0.0,
     );
   }
 }

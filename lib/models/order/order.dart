@@ -62,23 +62,24 @@ class OrderModel {
   }
 
   factory OrderModel.fromMap(Map<String, dynamic> map) {
+    final now = DateTime.now().millisecondsSinceEpoch;
     return OrderModel(
-      id: map[OrderContract.colId],
-      orderNumber: map[OrderContract.colOrderNumber],
-      userId: map[OrderContract.colUserId],
-      addressId: map[OrderContract.colAddressId],
-      voucherId: map[OrderContract.colVoucherId],
-      subtotal: (map[OrderContract.colSubtotal] ?? 0.0).toDouble(),
-      shippingFee: (map[OrderContract.colShippingFee] ?? 0.0).toDouble(),
-      discount: (map[OrderContract.colDiscount] ?? 0.0).toDouble(),
-      total: (map[OrderContract.colTotal] ?? 0.0).toDouble(),
-      paymentMethod: PaymentMethod.fromString(map[OrderContract.colPaymentMethod] ?? 'COD'),
-      paymentStatus: PaymentStatus.fromString(map[OrderContract.colPaymentStatus] ?? 'UNPAID'),
-      orderStatus: OrderStatus.fromString(map[OrderContract.colOrderStatus] ?? 'PENDING'),
-      note: map[OrderContract.colNote],
-      paymentDate: map[OrderContract.colPaymentDate],
-      createdAt: map[OrderContract.colCreatedAt],
-      updatedAt: map[OrderContract.colUpdatedAt],
+      id: map[OrderContract.colId] as String? ?? '',
+      orderNumber: map[OrderContract.colOrderNumber] as String? ?? '',
+      userId: map[OrderContract.colUserId] as String? ?? '',
+      addressId: map[OrderContract.colAddressId] as String? ?? '',
+      voucherId: map[OrderContract.colVoucherId] as String?,
+      subtotal: (map[OrderContract.colSubtotal] as num?)?.toDouble() ?? 0.0,
+      shippingFee: (map[OrderContract.colShippingFee] as num?)?.toDouble() ?? 0.0,
+      discount: (map[OrderContract.colDiscount] as num?)?.toDouble() ?? 0.0,
+      total: (map[OrderContract.colTotal] as num?)?.toDouble() ?? 0.0,
+      paymentMethod: PaymentMethod.fromString(map[OrderContract.colPaymentMethod] as String? ?? 'COD'),
+      paymentStatus: PaymentStatus.fromString(map[OrderContract.colPaymentStatus] as String? ?? 'UNPAID'),
+      orderStatus: OrderStatus.fromString(map[OrderContract.colOrderStatus] as String? ?? 'PENDING'),
+      note: map[OrderContract.colNote] as String?,
+      paymentDate: map[OrderContract.colPaymentDate] as int?,
+      createdAt: map[OrderContract.colCreatedAt] as int? ?? now,
+      updatedAt: map[OrderContract.colUpdatedAt] as int? ?? now,
     );
   }
 }

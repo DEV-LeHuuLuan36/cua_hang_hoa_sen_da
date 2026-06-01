@@ -77,6 +77,10 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
       child: Scaffold(
         backgroundColor: colorScheme.surfaceContainerLowest,
         appBar: AppBar(
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
           title: Text(
             'Đánh giá của tôi',
             style: TextStyle(color: colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)
@@ -85,7 +89,6 @@ class _MyReviewsScreenState extends State<MyReviewsScreen> {
           elevation: 0,
           surfaceTintColor: Colors.transparent,
           iconTheme: IconThemeData(color: colorScheme.onSurface),
-          automaticallyImplyLeading: false,
           bottom: TabBar(
             labelColor: AppColors.primary,
             unselectedLabelColor: colorScheme.onSurfaceVariant,

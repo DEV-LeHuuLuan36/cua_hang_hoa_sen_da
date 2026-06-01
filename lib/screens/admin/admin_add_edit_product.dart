@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../models/product/care_instruction.dart';
 import '../../models/product/succulent.dart';
@@ -26,6 +28,7 @@ class _AdminAddEditProductScreenState extends State<AdminAddEditProductScreen> {
 
   bool get isEditing => widget.productId != null;
   Succulent? _editingProduct;
+  String? _imagePath;
 
   @override
   void initState() {
@@ -58,6 +61,7 @@ class _AdminAddEditProductScreenState extends State<AdminAddEditProductScreen> {
       _priceController.text = product.price.toStringAsFixed(0);
       _stockController.text = product.stock.toString();
       _descController.text = product.description ?? '';
+      _imagePath = product.primaryImage;
       setState(() {});
     }
   }
@@ -69,6 +73,102 @@ class _AdminAddEditProductScreenState extends State<AdminAddEditProductScreen> {
     _stockController.dispose();
     _descController.dispose();
     super.dispose();
+  }
+
+  Widget _buildImagePicker(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final hasImage = _imagePath != null && _imagePath!.isNotEmpty;
+    final isAsset = hasImage && _imagePath!.startsWith('assets/');
+
+    return GestureDetector(
+      onTap: _pickImage,
+      child: Container(
+        width: double.infinity,
+        height: 160,
+        decoration: BoxDecoration(
+          color: isDark
+              ? AppColors.darkCard
+              : AppColors.primaryLight.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: AppColors.primary.withValues(alpha: 0.3),
+            width: 1.5,
+            strokeAlign: BorderSide.strokeAlignInside,
+          ),
+        ),
+        child: hasImage
+            ? Stack(
+                fit: StackFit.expand,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(11),
+                    child: isAsset
+                        ? Image.asset(
+                            _imagePath!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => _buildPickerPlaceholder(isDark),
+                          )
+                        : Image.file(
+                            File(_imagePath!),
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => _buildPickerPlaceholder(isDark),
+                          ),
+                  ),
+                  Positioned(
+                    top: 6,
+                    right: 6,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.edit, color: Colors.white, size: 18),
+                    ),
+                  ),
+                ],
+              )
+            : _buildPickerPlaceholder(isDark),
+      ),
+    );
+  }
+
+  Widget _buildPickerPlaceholder(bool isDark) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(
+          Icons.add_photo_alternate_outlined,
+          size: 40,
+          color: AppColors.primary.withValues(alpha: 0.7),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Thêm hình ảnh',
+          style: TextStyle(
+            color: AppColors.primary.withValues(alpha: 0.7),
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          'Nhấn để chọn từ thư viện',
+          style: TextStyle(
+            color: isDark ? AppColors.darkTextSecondary : Colors.grey[500],
+            fontSize: 12,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() => _imagePath = pickedFile.path);
+    }
   }
 
   void _handleSave() async {
@@ -113,6 +213,7 @@ class _AdminAddEditProductScreenState extends State<AdminAddEditProductScreen> {
       views: old?.views ?? 0,
       createdAt: old?.createdAt ?? now,
       updatedAt: now,
+      primaryImage: _imagePath,
     );
 
     bool success;
@@ -135,7 +236,6 @@ class _AdminAddEditProductScreenState extends State<AdminAddEditProductScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isLoading = context.watch<ProductProvider>().isLoading;
 
     return Scaffold(
@@ -160,6 +260,8 @@ class _AdminAddEditProductScreenState extends State<AdminAddEditProductScreen> {
               ),
               child: Column(
                 children: [
+                  _buildImagePicker(context),
+                  const SizedBox(height: 20),
                   CustomTextField(
                     controller: _nameController,
                     label: 'Tên sản phẩm',

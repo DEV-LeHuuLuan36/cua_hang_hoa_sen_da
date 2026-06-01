@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -131,6 +132,7 @@ class _AdminProductScreenState extends State<AdminProductScreen> {
       views: product.views,
       createdAt: product.createdAt,
       updatedAt: DateTime.now().millisecondsSinceEpoch,
+      primaryImage: product.primaryImage,
     );
 
     final ok = await context.read<ProductProvider>().updateProduct(updated);
@@ -383,6 +385,54 @@ class _CategoryChip extends StatelessWidget {
   }
 }
 
+class _ProductImage extends StatelessWidget {
+  final Succulent product;
+  final double size;
+
+  const _ProductImage({required this.product, this.size = 50});
+
+  @override
+  Widget build(BuildContext context) {
+    final imagePath = product.primaryImage;
+    final isAsset = imagePath != null &&
+        imagePath.isNotEmpty &&
+        imagePath.startsWith('assets/');
+
+    Widget child;
+    if (imagePath != null && imagePath.isNotEmpty) {
+      if (isAsset) {
+        child = Image.asset(
+          imagePath,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _buildPlaceholder(),
+        );
+      } else {
+        child = Image.file(
+          File(imagePath),
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _buildPlaceholder(),
+        );
+      }
+    } else {
+      child = _buildPlaceholder();
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: SizedBox(width: size, height: size, child: child),
+    );
+  }
+
+  Widget _buildPlaceholder() {
+    return Container(
+      width: size,
+      height: size,
+      color: AppColors.primaryLight.withValues(alpha: 0.2),
+      child: const Icon(Icons.eco, color: AppColors.primary),
+    );
+  }
+}
+
 class _ProductTile extends StatelessWidget {
   final Succulent product;
   final bool isDark;
@@ -416,15 +466,7 @@ class _ProductTile extends StatelessWidget {
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(
-            color: AppColors.primaryLight.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: const Icon(Icons.eco, color: AppColors.primary),
-        ),
+        leading: _ProductImage(product: product, size: 50),
         title: Text(
           product.name,
           style: TextStyle(fontWeight: FontWeight.bold, color: ThemeHelper.textPrimary(context)),

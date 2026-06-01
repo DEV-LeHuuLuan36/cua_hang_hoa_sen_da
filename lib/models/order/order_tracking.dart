@@ -27,12 +27,13 @@ class OrderTracking {
   }
 
   factory OrderTracking.fromMap(Map<String, dynamic> map) {
+    final now = DateTime.now().millisecondsSinceEpoch;
     return OrderTracking(
-      id: map[OrderTrackingContract.colId],
-      orderId: map[OrderTrackingContract.colOrderId],
-      status: OrderStatus.fromString(map[OrderTrackingContract.colStatus] ?? 'PENDING'),
-      note: map[OrderTrackingContract.colNote],
-      createdAt: map[OrderTrackingContract.colCreatedAt],
+      id: map[OrderTrackingContract.colId] as String? ?? '',
+      orderId: map[OrderTrackingContract.colOrderId] as String? ?? '',
+      status: OrderStatus.fromString(map[OrderTrackingContract.colStatus] as String? ?? 'PENDING'),
+      note: map[OrderTrackingContract.colNote] as String?,
+      createdAt: map[OrderTrackingContract.colCreatedAt] as int? ?? now,
     );
   }
 }

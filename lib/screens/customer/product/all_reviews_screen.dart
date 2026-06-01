@@ -189,7 +189,9 @@ class _AllReviewsScreenState extends State<AllReviewsScreen> {
   }
 
   Widget _buildRatingBar(int star) {
-    final percentage = _totalReviews > 0 ? 0.0 : 0.0;
+    final percentage = _totalReviews > 0
+        ? (_reviews.where((r) => (r['rating'] as int? ?? 0) == star).length / _totalReviews)
+        : 0.0;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
@@ -323,7 +325,6 @@ class _AllReviewsScreenState extends State<AllReviewsScreen> {
 
   Widget _buildReviewCard(Map<String, dynamic> review) {
     final fullName = review['full_name'] ?? 'Người dùng';
-    final avatar = review['avatar'] as String?;
     final rating = (review['rating'] ?? 5) as int;
     final comment = review['comment'] as String?;
     final createdAt = review['created_at'] as int?;
@@ -354,18 +355,13 @@ class _AllReviewsScreenState extends State<AllReviewsScreen> {
               CircleAvatar(
                 radius: 20,
                 backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                backgroundImage: avatar != null && avatar.isNotEmpty
-                    ? AssetImage(avatar)
-                    : null,
-                child: avatar == null || avatar.isEmpty
-                    ? Text(
-                        fullName.isNotEmpty ? fullName[0].toUpperCase() : 'U',
-                        style: const TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      )
-                    : null,
+                child: Text(
+                  fullName.isNotEmpty ? fullName[0].toUpperCase() : 'U',
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(

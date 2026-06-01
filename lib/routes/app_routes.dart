@@ -9,11 +9,11 @@ import '../utils/constants/route_names.dart';
 
 // Auth
 import '../screens/auth/login_screen.dart';
+import '../screens/auth/auth_gate.dart';
 import '../screens/auth/register_screen.dart';
 import '../screens/auth/forget_password_screen.dart';
 
 // Customer
-import '../screens/customer/home/home_screen.dart';
 import '../screens/customer/product/product_detail_screen.dart';
 import '../screens/customer/product/product_list_screen.dart';
 import '../screens/customer/cart/cart_screen.dart';
@@ -49,7 +49,7 @@ class AppRoutes {
 
     // --- CUSTOMER ROUTES ---
       case RouteNames.home:
-        return MaterialPageRoute(builder: (_) => const HomeScreen());
+        return MaterialPageRoute(builder: (_) => const AuthGate());
 
       case RouteNames.productDetail:
         final productId = settings.arguments as String;

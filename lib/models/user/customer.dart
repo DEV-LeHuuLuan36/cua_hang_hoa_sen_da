@@ -56,21 +56,21 @@ class Customer extends User {
   }
 
   factory Customer.fromMap(Map<String, dynamic> map) {
+    final now = DateTime.now().millisecondsSinceEpoch;
     return Customer(
-      id: map[UserContract.colId],
-      username: map[UserContract.colUsername],
-      password: map[UserContract.colPassword],
-      fullName: map[UserContract.colFullName],
-      email: map[UserContract.colEmail],
-      phone: map[UserContract.colPhone],
-      avatar: map[UserContract.colAvatar],
-      // Convert text từ SQLite sang Enum
+      id: map[UserContract.colId] as String? ?? '',
+      username: map[UserContract.colUsername] as String? ?? 'user',
+      password: map[UserContract.colPassword] as String? ?? '',
+      fullName: map[UserContract.colFullName] as String? ?? 'Khách hàng',
+      email: map[UserContract.colEmail] as String? ?? '',
+      phone: map[UserContract.colPhone] as String? ?? '',
+      avatar: map[UserContract.colAvatar] as String?,
       membershipLevel: MembershipLevel.fromString(map[UserContract.colMembershipLevel] ?? 'BRONZE'),
-      points: map[UserContract.colPoints] ?? 0,
-      totalSpent: (map[UserContract.colTotalSpent] ?? 0.0).toDouble(),
-      createdAt: map[UserContract.colCreatedAt],
-      updatedAt: map[UserContract.colUpdatedAt],
-      lastLogin: map[UserContract.colLastLogin],
+      points: map[UserContract.colPoints] as int? ?? 0,
+      totalSpent: (map[UserContract.colTotalSpent] as num?)?.toDouble() ?? 0.0,
+      createdAt: map[UserContract.colCreatedAt] as int? ?? now,
+      updatedAt: map[UserContract.colUpdatedAt] as int? ?? now,
+      lastLogin: map[UserContract.colLastLogin] as int?,
     );
   }
 }

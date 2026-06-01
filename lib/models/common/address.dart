@@ -49,20 +49,20 @@ class Address {
   }
 
   factory Address.fromMap(Map<String, dynamic> map) {
+    final now = DateTime.now().millisecondsSinceEpoch;
     return Address(
-      id: map[AddressContract.colId],
-      userId: map[AddressContract.colUserId],
-      fullName: map[AddressContract.colFullName],
-      phone: map[AddressContract.colPhone],
-      addressLine: map[AddressContract.colAddressLine],
-      city: map[AddressContract.colCity],
-      district: map[AddressContract.colDistrict],
-      ward: map[AddressContract.colWard],
-      // Khởi tạo Enum từ String trong DB
-      addressType: AddressType.fromString(map[AddressContract.colAddressType] ?? 'HOME'),
+      id: map[AddressContract.colId] as String? ?? '',
+      userId: map[AddressContract.colUserId] as String? ?? '',
+      fullName: map[AddressContract.colFullName] as String? ?? '',
+      phone: map[AddressContract.colPhone] as String? ?? '',
+      addressLine: map[AddressContract.colAddressLine] as String? ?? '',
+      city: map[AddressContract.colCity] as String? ?? '',
+      district: map[AddressContract.colDistrict] as String? ?? '',
+      ward: map[AddressContract.colWard] as String? ?? '',
+      addressType: AddressType.fromString(map[AddressContract.colAddressType] as String? ?? 'HOME'),
       isDefault: map[AddressContract.colIsDefault] == 1,
-      createdAt: map[AddressContract.colCreatedAt],
-      updatedAt: map[AddressContract.colUpdatedAt],
+      createdAt: map[AddressContract.colCreatedAt] as int? ?? now,
+      updatedAt: map[AddressContract.colUpdatedAt] as int? ?? now,
     );
   }
 }

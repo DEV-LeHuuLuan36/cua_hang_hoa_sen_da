@@ -23,11 +23,12 @@ class Cart {
   }
 
   factory Cart.fromMap(Map<String, dynamic> map) {
+    final now = DateTime.now().millisecondsSinceEpoch;
     return Cart(
-      id: map[CartContract.colId],
-      userId: map[CartContract.colUserId],
-      createdAt: map[CartContract.colCreatedAt],
-      updatedAt: map[CartContract.colUpdatedAt],
+      id: map[CartContract.colId] as String? ?? '',
+      userId: map[CartContract.colUserId] as String? ?? '',
+      createdAt: map[CartContract.colCreatedAt] as int? ?? now,
+      updatedAt: map[CartContract.colUpdatedAt] as int? ?? now,
     );
   }
 }

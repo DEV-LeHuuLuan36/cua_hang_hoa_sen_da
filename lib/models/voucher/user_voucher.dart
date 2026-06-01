@@ -27,11 +27,11 @@ class UserVoucher {
 
   factory UserVoucher.fromMap(Map<String, dynamic> map) {
     return UserVoucher(
-      id: map[UserVoucherContract.colId],
-      userId: map[UserVoucherContract.colUserId],
-      voucherId: map[UserVoucherContract.colVoucherId],
-      usedAt: map[UserVoucherContract.colUsedAt],
-      orderId: map[UserVoucherContract.colOrderId],
+      id: map[UserVoucherContract.colId] as String? ?? '',
+      userId: map[UserVoucherContract.colUserId] as String? ?? '',
+      voucherId: map[UserVoucherContract.colVoucherId] as String? ?? '',
+      usedAt: map[UserVoucherContract.colUsedAt] as int?,
+      orderId: map[UserVoucherContract.colOrderId] as String?,
     );
   }
 }

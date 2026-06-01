@@ -17,14 +17,34 @@ class ProductDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final productProvider = context.watch<ProductProvider>();
+
+    if (productProvider.isLoading) {
+      return Scaffold(
+        backgroundColor: ThemeHelper.background(context),
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          iconTheme: IconThemeData(color: isDark ? Colors.white : AppColors.primaryDark),
+        ),
+        extendBodyBehindAppBar: true,
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     final product = productProvider.products.cast().firstWhere(
           (p) => p.id == productId,
-      orElse: () => null,
-    );
+          orElse: () => null,
+        );
 
     if (product == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Lỗi')),
+        backgroundColor: ThemeHelper.background(context),
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          iconTheme: IconThemeData(color: isDark ? Colors.white : AppColors.primaryDark),
+        ),
+        extendBodyBehindAppBar: true,
         body: const Center(child: Text('Không tìm thấy sản phẩm!')),
       );
     }
@@ -123,11 +143,9 @@ class ProductDetailScreen extends StatelessWidget {
                   // 4. Hướng dẫn chăm sóc (Lấy từ class CareInstruction)
                   const Text('Hướng dẫn chăm sóc', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 12),
-                  if (product.careInstruction != null) ...[
-                    _buildCareItem(context, Icons.wb_sunny_outlined, 'Ánh sáng', product.careInstruction!.lightRequirement),
-                    _buildCareItem(context, Icons.water_drop_outlined, 'Lượng nước', product.careInstruction!.waterRequirement),
-                    _buildCareItem(context, Icons.thermostat_outlined, 'Độ khó', product.careInstruction!.careLevel),
-                  ],
+                  _buildCareItem(context, Icons.wb_sunny_outlined, 'Ánh sáng', product.careInstruction.lightRequirement),
+                  _buildCareItem(context, Icons.water_drop_outlined, 'Lượng nước', product.careInstruction.waterRequirement),
+                  _buildCareItem(context, Icons.thermostat_outlined, 'Độ khó', product.careInstruction.careLevel),
                   const SizedBox(height: 24),
 
                   // 5. Thông số kỹ thuật
@@ -153,7 +171,7 @@ class ProductDetailScreen extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: ThemeHelper.surface(context),
-          boxShadow: [BoxShadow(color: isDark ? Colors.black.withOpacity(0.3) : Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
+          boxShadow: [BoxShadow(color: isDark ? Colors.black.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -5))],
         ),
         child: SafeArea(
           child: Row(
@@ -231,7 +249,7 @@ class ProductDetailScreen extends StatelessWidget {
             } else if (index < rating) {
               return const Icon(Icons.star_half, color: AppColors.accent, size: 20);
             } else {
-              return Icon(Icons.star_border, color: AppColors.accent.withOpacity(0.4), size: 20);
+              return Icon(Icons.star_border, color: AppColors.accent.withValues(alpha: 0.4), size: 20);
             }
           }),
           const SizedBox(width: 4),
@@ -259,7 +277,7 @@ class ProductDetailScreen extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: stock > 0 ? AppColors.success.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
+            color: stock > 0 ? AppColors.success.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
@@ -286,7 +304,7 @@ class ProductDetailScreen extends StatelessWidget {
         decoration: BoxDecoration(
           color: ThemeHelper.surface(context),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.withOpacity(0.2)),
+          border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -336,7 +354,7 @@ class ProductDetailScreen extends StatelessWidget {
                           } else if (index < rating) {
                             return const Icon(Icons.star_half, color: AppColors.accent, size: 24);
                           } else {
-                            return Icon(Icons.star_border, color: AppColors.accent.withOpacity(0.4), size: 24);
+                            return Icon(Icons.star_border, color: AppColors.accent.withValues(alpha: 0.4), size: 24);
                           }
                         }),
                       ),
@@ -368,7 +386,7 @@ class ProductDetailScreen extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: AppColors.primaryLight.withOpacity(0.1), shape: BoxShape.circle),
+            decoration: BoxDecoration(color: AppColors.primaryLight.withValues(alpha: 0.1), shape: BoxShape.circle),
             child: Icon(icon, color: AppColors.primary, size: 20),
           ),
           const SizedBox(width: 16),

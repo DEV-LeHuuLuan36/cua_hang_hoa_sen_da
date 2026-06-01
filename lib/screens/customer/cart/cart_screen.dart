@@ -22,7 +22,8 @@ class CartScreen extends StatelessWidget {
     // Tính tổng tiền chỉ từ các sản phẩm được chọn
     double totalAmount = 0;
     for (var item in cartProvider.selectedItems) {
-      final product = productProvider.products.firstWhere(
+      if (productProvider.products.isEmpty) continue;
+      final product = productProvider.products.cast<dynamic>().firstWhere(
         (p) => p.id == item.productId,
         orElse: () => productProvider.products.first,
       );
@@ -34,21 +35,12 @@ class CartScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: ThemeHelper.background(context),
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: Text('Giỏ hàng của bạn', style: TextStyle(color: ThemeHelper.textPrimary(context))),
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.primaryDark),
         centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () {
-            if (Navigator.canPop(context)) {
-              Navigator.pop(context);
-            } else {
-              Navigator.pushReplacementNamed(context, RouteNames.home);
-            }
-          },
-        ),
       ),
       body: cartItems.isEmpty
           ? EmptyStateWidget(
@@ -67,10 +59,13 @@ class CartScreen extends StatelessWidget {
                     itemCount: cartItems.length,
                     itemBuilder: (context, index) {
                       final item = cartItems[index];
-                      final product = productProvider.products.firstWhere(
-                        (p) => p.id == item.productId,
-                        orElse: () => productProvider.products.first,
-                      );
+                      final fallbackProduct = productProvider.products.isNotEmpty ? productProvider.products.first : null;
+                      final product = fallbackProduct != null
+                          ? productProvider.products.cast<dynamic>().firstWhere(
+                              (p) => p.id == item.productId,
+                              orElse: () => fallbackProduct,
+                            )
+                          : null;
                       final isSelected = selectedItemIds.contains(item.id);
 
                       return Container(
@@ -110,7 +105,9 @@ class CartScreen extends StatelessWidget {
                                 // Hình ảnh sản phẩm
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(12),
-                                  child: product.primaryImage != null && product.primaryImage!.isNotEmpty
+                                  child: product != null &&
+                                          product.primaryImage != null &&
+                                          product.primaryImage!.isNotEmpty
                                       ? Image.asset(
                                           product.primaryImage!,
                                           width: 80,
@@ -127,7 +124,7 @@ class CartScreen extends StatelessWidget {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        product.name,
+                                        product?.name ?? 'Sản phẩm',
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 15,
@@ -138,7 +135,7 @@ class CartScreen extends StatelessWidget {
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        '${product.price.toStringAsFixed(0)}đ',
+                                        '${product?.price.toStringAsFixed(0) ?? '0'}đ',
                                         style: const TextStyle(
                                           color: AppColors.primary,
                                           fontWeight: FontWeight.bold,

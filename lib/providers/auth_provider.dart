@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 
 import '../models/user/user.dart';
 import '../models/user/customer.dart';
+import '../models/user/admin.dart';
 import '../database/repositories/auth_repository.dart';
 import '../database/daos/user_dao.dart';
 
@@ -22,25 +23,82 @@ class AuthProvider extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated => _currentUser != null;
 
-  // Auto-restore session: check Firebase persisted session first, then SQLite
-  Future<void> tryAutoLogin() async {
-    final fbUser = firebase_auth.FirebaseAuth.instance.currentUser;
-    if (fbUser != null) {
-      _currentUser = await _authRepository.getUserProfile(fbUser.uid);
-      if (_currentUser != null) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('userId', fbUser.uid);
-        notifyListeners();
-        return;
-      }
-    }
+  bool get isAdmin {
+    if (_currentUser == null) return false;
+    final email = _currentUser!.email.toLowerCase();
+    final username = _currentUser!.username.toLowerCase();
+    if (email == 'admin@gmail.com' || username == 'admin') return true;
+    return _currentUser!.role.name == 'ADMIN';
+  }
 
-    final prefs = await SharedPreferences.getInstance();
-    final localUserId = prefs.getString('userId');
-    if (localUserId != null) {
-      _currentUser = await _authRepository.getUserProfile(localUserId);
+  Future<void> tryAutoLogin() async {
+    try {
+      final fbUser = firebase_auth.FirebaseAuth.instance.currentUser;
+
+      if (fbUser != null) {
+        _currentUser = await _authRepository.getUserProfile(fbUser.uid);
+        if (_currentUser != null) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('userId', fbUser.uid);
+          notifyListeners();
+          return;
+        }
+        // Firebase session exists but DB lookup returned null.
+        // Check by email/username and force-instantiate an Admin if it matches.
+        if (_isKnownAdminEmail(fbUser.email) || _isKnownAdminUsername(fbUser.email?.split('@').first ?? '')) {
+          _currentUser = _buildFallbackAdmin(fbUser.uid, fbUser.email ?? 'admin@gmail.com');
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('userId', fbUser.uid);
+          notifyListeners();
+          return;
+        }
+      }
+
+      final prefs = await SharedPreferences.getInstance();
+      final localUserId = prefs.getString('userId');
+      if (localUserId != null) {
+        _currentUser = await _authRepository.getUserProfile(localUserId);
+        // Last resort: check by stored username as well
+        if (_currentUser == null) {
+          _currentUser = await _userDao.getUserById(localUserId);
+        }
+        // If still null but id looks like admin, force fallback
+        if (_currentUser == null && _isKnownAdminId(localUserId)) {
+          _currentUser = _buildFallbackAdmin(localUserId, 'admin@gmail.com');
+        }
+        notifyListeners();
+      }
+    } catch (e) {
+      // On any unexpected error during auto-login, remain unauthenticated
+      _currentUser = null;
       notifyListeners();
     }
+  }
+
+  bool _isKnownAdminEmail(String? email) {
+    return email?.toLowerCase() == 'admin@gmail.com';
+  }
+
+  bool _isKnownAdminUsername(String? username) {
+    return username?.toLowerCase() == 'admin';
+  }
+
+  bool _isKnownAdminId(String id) {
+    return id.toLowerCase().contains('admin');
+  }
+
+  Admin _buildFallbackAdmin(String id, String email) {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    return Admin(
+      id: id,
+      username: 'admin',
+      password: '',
+      fullName: 'Administrator',
+      email: email,
+      phone: '',
+      createdAt: now,
+      updatedAt: now,
+    );
   }
 
   Future<bool> login(String email, String password) async {

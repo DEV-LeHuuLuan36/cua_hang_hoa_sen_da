@@ -113,6 +113,11 @@ class _AdminOrderScreenState extends State<AdminOrderScreen> {
     final currentStatus = order['order_status']?.toString() ?? 'PENDING';
     final statusColor = _statusColor(currentStatus);
 
+    final createdAtMs = order['created_at'] as int?;
+    final dateStr = createdAtMs != null
+        ? DateTime.fromMillisecondsSinceEpoch(createdAtMs).toString().substring(0, 16)
+        : '—';
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -134,7 +139,7 @@ class _AdminOrderScreenState extends State<AdminOrderScreen> {
             children: [
               Expanded(
                 child: Text(
-                  'ĐH: #${order['order_number']}',
+                  'ĐH: #${order['order_number'] ?? '—'}',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
@@ -157,7 +162,7 @@ class _AdminOrderScreenState extends State<AdminOrderScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Ngày đặt: ${DateTime.fromMillisecondsSinceEpoch(order['created_at']).toString().substring(0, 16)}',
+            'Ngày đặt: $dateStr',
             style: TextStyle(color: ThemeHelper.textSecondary(context)),
           ),
           const SizedBox(height: 4),

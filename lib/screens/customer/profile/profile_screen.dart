@@ -7,7 +7,6 @@ import '../../../utils/theme_helper.dart';
 import '../../../utils/constants/route_names.dart';
 import '../../../providers/order_provider.dart';
 import '../../../providers/auth_provider.dart';
-import '../../../models/user/customer.dart';
 import '../../../models/enums/membership_level.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -64,7 +63,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     // 1. Lấy thông tin từ AuthProvider
     final authProvider = context.watch<AuthProvider>();
     final user = authProvider.currentUser;
@@ -145,16 +143,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                             ],
                           ),
-                          child: CircleAvatar(
-                            radius: 40,
-                            backgroundColor: AppColors.primaryLight,
-                            backgroundImage: user?.avatar != null && user!.avatar!.isNotEmpty
-                                ? FileImage(File(user!.avatar!))
-                                : null,
-                            child: user?.avatar == null || user!.avatar!.isEmpty
-                                ? const Icon(Icons.person, size: 40, color: Colors.white)
-                                : null,
-                          ),
+                          child: _buildAvatar(user),
                         ),
                         if (_isUpdatingAvatar)
                           Positioned.fill(
@@ -226,7 +215,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 decoration: BoxDecoration(
                   color: ThemeHelper.surface(context),
                   borderRadius: BorderRadius.circular(16),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)],
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -285,6 +274,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildAvatar(dynamic user) {
+    final hasAvatar = user?.avatar != null && user.avatar.isNotEmpty;
+    return CircleAvatar(
+      radius: 40,
+      backgroundColor: AppColors.primaryLight,
+      backgroundImage: hasAvatar ? FileImage(File(user.avatar)) : null,
+      child: hasAvatar
+          ? null
+          : const Icon(Icons.person, size: 40, color: Colors.white),
     );
   }
 
